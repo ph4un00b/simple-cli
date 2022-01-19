@@ -1,14 +1,12 @@
 import {
   ensureDirSync as mkdir_p,
-  ensureFile,
 } from "https://deno.land/std@0.121.0/fs/mod.ts";
 
-import { JSDOM } from "https://cdn.esm.sh/jsdom";
+// import { JSDOM } from "https://cdn.esm.sh/jsdom";
 import yargs from "https://deno.land/x/yargs/deno.ts";
 import {
   bgBlue,
   bgBrightBlack,
-  blue,
   bold,
   green,
   red,
@@ -23,6 +21,7 @@ type FileContents = {
   "tailwind.config.js": string;
   "vite.config.js": string;
   "package.json": string;
+  "install.bat": string;
 };
 type Templates = {
   "no-bullshit": {
@@ -34,6 +33,7 @@ type Templates = {
       | "package.json"
       | "vite.config.js"
       | "tailwind.config.js"
+      | "install.bat"
     >;
     file_contents: FileContents;
   };
@@ -49,6 +49,7 @@ type unfancy_files = {
   "tailwind.config.js": string;
   "postcss.config.js": string;
   "main.js": string;
+  "install.bat": string;
 };
 const templates: Templates = {
   "no-bullshit": {
@@ -64,8 +65,10 @@ const templates: Templates = {
       "tailwind.config.js",
       "postcss.config.js",
       "main.js",
+      "install.bat",
     ],
     file_contents: {
+      "install.bat": `call npm install`,
       "package.json": `
 {
   "name": "tank-project",
@@ -76,10 +79,10 @@ const templates: Templates = {
     "preview": "vite preview"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.0",
-    "postcss": "^8.3.11",
-    "tailwindcss": "^3.0.15",
-    "vite": "^2.7.12"
+    "autoprefixer": "10.4.0",
+    "postcss": "8.4",
+    "tailwindcss": "3.0.15",
+    "vite": "2.7.13"
   }
 }
       `,
@@ -350,7 +353,6 @@ const y = yargs(Deno.args)
         "n": {
           alias: "name",
           demandOption: true,
-          // default: true,
           describe: "Project name.",
           type: "string",
         },
@@ -378,7 +380,7 @@ const y = yargs(Deno.args)
           demandOption: true,
           describe: "Project name.",
           type: "array",
-          choices: ['vite', 'lint']
+          choices: ["vite", "lint"],
         },
       });
     },
@@ -420,9 +422,8 @@ function listen(port: number) {
   console.log(p);
 }
 
-function update_project() {
+async function update_project() {
   const option: options = selected();
-  console.log(option, "selected");
 
   const { unfancy_files, file_contents }: {
     file_contents: FileContents;
@@ -432,6 +433,7 @@ function update_project() {
       | "package.json"
       | "vite.config.js"
       | "tailwind.config.js"
+      | "install.bat"
     >;
   } = templates[option];
 
@@ -443,6 +445,22 @@ function update_project() {
     Deno.writeFileSync(full_name, data, { create: true });
     console.log(full_name, "Created file.");
   }
+
+  // on Window { cmd: ["npm", "install"] } throws a NotFound!
+  // then I use a BAT file
+  const process = Deno.run({ cmd: ["./install.bat"] });
+  let status = await process.status();
+  if (status.success == false) Deno.exit(status.code);
+  else process.close();
+
+  Deno.removeSync("./install.bat");
+
+  const echo = Deno.run({
+    cmd: ["cmd", "/c", "echo", "Try " + green("npm run dev") + "!"],
+  });
+  status = await echo.status();
+  if (status.success == false) Deno.exit(status.code);
+  else echo.close();
 }
 
 function create_project(project: options, name: string) {
@@ -460,10 +478,6 @@ function create_project(project: options, name: string) {
     mkdir_p(full_name);
     console.log(full_name, "Created folder.");
   }
-
-  // for (const file of files) {
-  //   ensureFile(file);
-  // }
 
   const encoder = new TextEncoder();
   for (const key of files) {
