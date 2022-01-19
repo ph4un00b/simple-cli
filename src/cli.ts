@@ -5,17 +5,50 @@ import {
 
 import { JSDOM } from "https://cdn.esm.sh/jsdom";
 import yargs from "https://deno.land/x/yargs/deno.ts";
+import {
+  bgBlue,
+  bgBrightBlack,
+  blue,
+  bold,
+  green,
+  red,
+} from "https://deno.land/std@0.121.0/fmt/colors.ts";
 
 type FileContents = {
-  "index.css": string;
+  ".gitignore": string;
+  "styles.css": string;
   "index.html": string;
+  "main.js": string;
+  "postcss.config.js": string;
+  "tailwind.config.js": string;
+  "vite.config.js": string;
+  "package.json": string;
 };
 type Templates = {
   "no-bullshit": {
     directories: string[];
-    files: string[];
+    files: Array<"index.html" | "styles.css" | ".gitignore">;
+    unfancy_files: Array<
+      | "main.js"
+      | "postcss.config.js"
+      | "package.json"
+      | "vite.config.js"
+      | "tailwind.config.js"
+    >;
     file_contents: FileContents;
   };
+};
+type files = {
+  "index.html": string;
+  "styles.css": string;
+  ".gitignore": string;
+};
+type unfancy_files = {
+  "package.json": string;
+  "vite.config.js": string;
+  "tailwind.config.js": string;
+  "postcss.config.js": string;
+  "main.js": string;
 };
 const templates: Templates = {
   "no-bullshit": {
@@ -24,12 +57,69 @@ const templates: Templates = {
       "public",
       "sections",
     ],
-    files: [
-      "index.css",
-      "index.html",
+    files: ["index.html", "styles.css", ".gitignore"],
+    unfancy_files: [
+      "package.json",
+      "vite.config.js",
+      "tailwind.config.js",
+      "postcss.config.js",
+      "main.js",
     ],
     file_contents: {
-      "index.css": `
+      "package.json": `
+{
+  "name": "tank-project",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.3.11",
+    "tailwindcss": "^3.0.15",
+    "vite": "^2.7.12"
+  }
+}
+      `,
+      "vite.config.js": `
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: null,
+      },
+    },
+  },
+});
+
+      `,
+      "tailwind.config.js": `
+module.exports = {
+  content: ["./index.html", "./**/*.js"],
+  darkMode: "class",
+  plugins: [],
+};
+
+      `,
+      "postcss.config.js": `
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+      `,
+      "main.js": `
+import "./styles.css";
+
+// add all your js content...
+      `,
+      "styles.css": `
 body {
   font-size: 125%;
   line-height: 1.5;
@@ -78,8 +168,8 @@ section:target {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="index.css">
     <title>Document</title>
+    <link rel="stylesheet" href="./styles.css">
 </head>
 
 <body>
@@ -88,7 +178,7 @@ section:target {
             Jump to...
             <ul>
                 <li><a href="#section-1">Section 1</a></li>
-                <li><a href="#section2">Section 2</a></li>
+                <li><a href="#section-2">Section 2</a></li>
                 <li><a href="#section-3">Section 3</a></li>
                 <li><a href="#section-4">Section 4</a></li>
                 <li><a href="#section-5">Section 5</a></li>
@@ -182,6 +272,38 @@ section:target {
 </body>
 </html>
         `,
+      ".gitignore": `
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+.DS_Store
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.exe
+
+# Firebase
+serviceAccountKey.json
+      `,
     },
   },
 };
@@ -191,6 +313,11 @@ type options = "no-bullshit";
 interface Arguments {
   bs: string;
   name: string;
+  configs: boolean;
+}
+
+interface HTTPArguments {
+  port: number;
 }
 
 console.log(Deno.args);
@@ -198,8 +325,26 @@ console.log(Deno.args);
 const y = yargs(Deno.args)
   .epilogue("for more information, find our manual at http://example.com")
   .command(
+    "<http>",
+    "Simple HTTP Server.",
+    function (yargs: any) {
+      return yargs.options({
+        "p": {
+          alias: "port",
+          default: 3000,
+          describe: "Port.",
+          type: "number",
+        },
+      });
+    },
+    function (argv: HTTPArguments) {
+      console.log("port: ", argv.port);
+      listen(argv.port);
+    },
+  )
+  .command(
     "<blog>",
-    "make a get HTTP request",
+    "Create blog project.",
     function (yargs: any) {
       return yargs.options({
         "n": {
@@ -223,11 +368,37 @@ const y = yargs(Deno.args)
       create_project("no-bullshit", argv.name);
     },
   )
+  .command(
+    "<add>",
+    "Update project with unfancy stuff.",
+    function (yargs: any) {
+      return yargs.options({
+        "c": {
+          alias: "configs",
+          demandOption: true,
+          describe: "Project name.",
+          type: "array",
+          choices: ['vite', 'lint']
+        },
+      });
+    },
+    function ({ configs }: { configs: boolean }) {
+      console.log("configs", configs);
+      update_project();
+    },
+  )
   .example([
+    ["tank http", "Simple HTTP Server."],
+    ["tank http -p 8000", ""],
     ["tank blog --name my-blog --no-bs", "Create an unfancy blog project"],
-    ["tank add --configs", "Create Postcss, Tailwindcss, Vite configurations for project"],
-    ["tank add --lint", "Create eslint, prettier configurations for project"],
-    ["tank add --server --tests", "Create Firebase backend with tests for project components"],
+    [
+      "tank add --configs vite lint",
+      "Create Postcss, Tailwindcss, Vite configurations for project",
+    ],
+    [
+      "tank add --server --tests",
+      "Create Firebase backend with tests for project components",
+    ],
     ["tank add --layouts", "Create layouts"],
   ])
   .strictCommands()
@@ -237,13 +408,50 @@ const y = yargs(Deno.args)
 
 console.log(y);
 
+function listen(port: number) {
+  const p = Deno.run({
+    cmd: [
+      "echo",
+      `${bold(red("TODO"))}: ${bgBrightBlack("listen on port:")} ${
+        bgBlue(port.toString())
+      }`,
+    ],
+  });
+  console.log(p);
+}
+
+function update_project() {
+  const option: options = selected();
+  console.log(option, "selected");
+
+  const { unfancy_files, file_contents }: {
+    file_contents: FileContents;
+    unfancy_files: Array<
+      | "main.js"
+      | "postcss.config.js"
+      | "package.json"
+      | "vite.config.js"
+      | "tailwind.config.js"
+    >;
+  } = templates[option];
+
+  const encoder = new TextEncoder();
+  for (const key of unfancy_files) {
+    const full_name = key;
+    const file = file_contents[key as unknown as keyof unfancy_files];
+    const data = encoder.encode(file);
+    Deno.writeFileSync(full_name, data, { create: true });
+    console.log(full_name, "Created file.");
+  }
+}
+
 function create_project(project: options, name: string) {
   const option: options = selected();
   console.log(option, "selected");
 
   const { directories, files, file_contents }: {
     directories: string[];
-    files: string[];
+    files: Array<"index.html" | "styles.css" | ".gitignore">;
     file_contents: FileContents;
   } = templates[option];
 
@@ -257,13 +465,8 @@ function create_project(project: options, name: string) {
   //   ensureFile(file);
   // }
 
-  type files = {
-    "index.html": string;
-    "index.css": string;
-  };
-
   const encoder = new TextEncoder();
-  for (const key in file_contents) {
+  for (const key of files) {
     const full_name = `${name}/${key}`;
     const file = file_contents[key as unknown as keyof files];
     const data = encoder.encode(file);
