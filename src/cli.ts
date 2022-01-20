@@ -78,7 +78,7 @@ const VITE = {
 
 function vite_handler({ configs }: { configs: boolean }) {
   console.log('configs', configs)
-  add_vite()
+  add_vite({})
 }
 
 async function blog_handler({ bs, name }: Arguments) {
@@ -86,7 +86,7 @@ async function blog_handler({ bs, name }: Arguments) {
   console.log('bs: ', bs)
   create_blog('no-bullshit', name)
   if (!bs) return
-  await add_vite()
+  await add_vite({for_project: name})
 }
 
 function http_handler(argv: HTTPArguments) {
@@ -108,11 +108,12 @@ type ViteContents = {
   unfancy_files: UnfancyFiles;
 };
 
-async function add_vite() {
+async function add_vite({ for_project: name }: { for_project?: string }) {
+  if (name) console.log('unfancy in:', name)
   const option: options = selected()
   const { unfancy_files: files, file_contents: contents }: ViteContents =
     templates[option]
-  create_files({ files, name: undefined, contents })
+  create_files({ files, name, contents })
   // on Window { cmd: ["npm", "install"] } throws a NotFound!
   // then I use a BAT file
   await exec(['./install.bat'])
@@ -149,19 +150,23 @@ function create_blog(project: options, name: string) {
 
 type CreateFiles = {
   files: FancyFiles | UnfancyFiles;
-  name: string | undefined;
+  name?: string;
   contents: FileContents;
 };
 
 function create_files(spec: CreateFiles) {
   const { files, name, contents } = spec
   for (const key of files) {
-    const full_name = name ? `${name}/${key}` : key
-    _write_file(
-      contents[key as unknown as keyof (FancyFilesList | UnfancyFilesList)],
-      full_name,
-    )
+    _write_file(_contents(key, contents), _full_path(key, name))
   }
+}
+
+function _contents(key: string, contents: FileContents): string {
+  return contents[key as unknown as keyof (FancyFilesList | UnfancyFilesList)]
+}
+
+function _full_path(key: string, name?: string) {
+  return name ? `${name}/${key}` : key
 }
 
 function _write_file(file_data: string, full_name: string) {
@@ -201,6 +206,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version('0.0.0')
+    .version('0.2.0')
     .parse()
 }
