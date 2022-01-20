@@ -86,7 +86,7 @@ async function blog_handler({ bs, name }: Arguments) {
   console.log('bs: ', bs)
   create_blog('no-bullshit', name)
   if (!bs) return
-  await add_vite({for_project: name})
+  await add_vite({ for_project: name })
 }
 
 function http_handler(argv: HTTPArguments) {
@@ -109,16 +109,24 @@ type ViteContents = {
 };
 
 async function add_vite({ for_project: name }: { for_project?: string }) {
-  if (name) console.log('unfancy in:', name)
-  const option: options = selected()
-  const { unfancy_files: files, file_contents: contents }: ViteContents =
-    templates[option]
+  const { unfancy_files: files, file_contents: contents } =
+    templates[selected()]
   create_files({ files, name, contents })
+  await exec([_install_vite_config(name)])
+  Deno.removeSync(_install_vite_config(name))
+  await exec(_echo_vite_message(name))
+}
+
+function _echo_vite_message(name?: string): string[] {
+  return name
+    ? ['cmd', '/c', 'echo', `Try cd ${name} && ${green('npm run dev')}!`]
+    : ['cmd', '/c', 'echo', `Try ${green('npm run dev')}!`]
+}
+
+function _install_vite_config(name?: string) {
   // on Window { cmd: ["npm", "install"] } throws a NotFound!
   // then I use a BAT file
-  await exec(['./install.bat'])
-  Deno.removeSync('./install.bat')
-  await exec(['cmd', '/c', 'echo', 'Try ' + green('npm run dev') + '!'])
+  return name ? `cd ./${name} && ./install.bat` : './install.bat'
 }
 
 async function exec(cmd: string[]) {
@@ -138,12 +146,8 @@ type BlogContent = {
 };
 
 function create_blog(project: options, name: string) {
-  const option: options = selected()
-  console.log(option, 'selected')
-
   const { directories, files, file_contents: contents }: BlogContent =
-    templates[option]
-
+    templates[selected()]
   create_directories(directories, name)
   create_files({ files, name, contents })
 }
@@ -206,6 +210,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version('0.2.0')
+    .version('0.2.1')
     .parse()
 }
