@@ -27,10 +27,17 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {}
 
+const p_opt = {
+  alias: 'port',
+  default: 3000,
+  describe: 'Port.',
+  type: 'number',
+}
+
 const HTTP = {
   command: '<http>',
   describe: 'Simple HTTP Server.',
-  builder: http_options,
+  builder: (cli: any) => cli.options({ 'p': p_opt }),
   handler: http_handler,
   example: ['tank http', 'Simple HTTP Server.'],
 }
@@ -52,7 +59,7 @@ const bs_opt = {
 const BLOG = {
   command: '<blog>',
   describe: 'Create blog project.',
-  builder: blog_options,
+  builder: (cli: any) => cli.options({ 'n': name_opt, 'b': bs_opt }),
   handler: blog_handler,
   example: [
     'tank blog --name my-blog --no-bs',
@@ -98,24 +105,9 @@ async function blog_handler({ bs, name }: Arguments) {
   await add_vite()
 }
 
-function blog_options(cli: any) {
-  return cli.options({ 'n': name_opt, 'b': bs_opt })
-}
-
 function http_handler(argv: HTTPArguments) {
   console.log('port: ', argv.port)
   listen(argv.port)
-}
-
-function http_options(cli: any) {
-  return cli.options({
-    'p': {
-      alias: 'port',
-      default: 3000,
-      describe: 'Port.',
-      type: 'number',
-    },
-  })
 }
 
 function listen(port: number) {
@@ -159,6 +151,7 @@ type BlogContent = {
   files: FancyFiles;
   file_contents: FileContents;
 };
+
 function create_blog(project: options, name: string) {
   const option: options = selected()
   console.log(option, 'selected')
@@ -175,6 +168,7 @@ type CreateFiles = {
   name: string | undefined;
   contents: FileContents;
 };
+
 function create_files(spec: CreateFiles) {
   const { files, name, contents } = spec
   for (const key of files) {

@@ -77,20 +77,20 @@ export const templates: Templates = {
     file_contents: {
       'install.bat': 'call npm install',
       'package.json': `{
-    "name": "tank-project",
-    "version": "0.0.0",
-    "scripts": {
-      "dev": "vite",
-      "build": "vite build",
-      "preview": "vite preview"
-    },
-    "devDependencies": {
-      "autoprefixer": "10.4.0",
-      "postcss": "8.4",
-      "tailwindcss": "3.0.15",
-      "vite": "2.7.13"
-    }
+  "name": "tank-project",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "autoprefixer": "10.4.0",
+    "postcss": "8.4",
+    "tailwindcss": "3.0.15",
+    "vite": "2.7.13"
   }
+}
         `,
       'vite.config.js': `import { defineConfig } from "vite";
   

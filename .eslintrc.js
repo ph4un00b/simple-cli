@@ -1,19 +1,20 @@
+/* eslint-disable linebreak-style */
 module.exports = {
   'env': {
     'node': true,
-    'es2021': true
+    'es2021': true,
   },
   'extends': [
     'eslint:recommended',
-    'plugin:@typescript-eslint/recommended'
+    'plugin:@typescript-eslint/recommended',
   ],
   'parser': '@typescript-eslint/parser',
   'parserOptions': {
     'ecmaVersion': 'latest',
-    'sourceType': 'module'
+    'sourceType': 'module',
   },
   'plugins': [
-    '@typescript-eslint'
+    '@typescript-eslint',
   ],
   'rules': {
     'max-lines-per-function': [
@@ -42,19 +43,19 @@ module.exports = {
     'no-console': 1,
     'indent': [
       'error',
-      2
+      2,
     ],
     'linebreak-style': [
       'error',
-      'unix'
+      'unix',
     ],
     'quotes': [
       'error',
-      'single'
+      'single',
     ],
     'semi': [
       'error',
-      'never'
-    ]
-  }
+      'never',
+    ],
+  },
 }
