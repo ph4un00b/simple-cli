@@ -57,5 +57,8 @@ module.exports = {
       'error',
       'never',
     ],
+    'no-trailing-spaces': [
+      'error'
+    ]
   },
 }

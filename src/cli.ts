@@ -1,3 +1,4 @@
+// --allow-read --allow-write --unstable --no-check --allow-run
 import {
   ensureDirSync as mkdir_p,
 } from 'https://deno.land/std@0.121.0/fs/mod.ts'
@@ -74,23 +75,6 @@ const VITE = {
   handler: vite_handler,
   example: ['tank vite', 'Tailwind + Vite configurations for project.'],
 }
-
-yargs(Deno.args)
-  .epilogue('for more information, find our manual at http://example.com')
-  .command(HTTP)
-  .example(...HTTP.example)
-  .command(BLOG)
-  .example(...BLOG.example)
-  .command(VITE)
-  .example(...VITE.example)
-  .example([
-    ['tank server-blocks --no-tests'],
-    ['tank add --layouts', 'Create layouts'],
-  ])
-  .strictCommands()
-  .demandCommand(1)
-  .version('0.0.0')
-  .parse()
 
 function vite_handler({ configs }: { configs: boolean }) {
   console.log('configs', configs)
@@ -200,4 +184,23 @@ function create_directories(directories: string[], name: string) {
 function selected(): options {
   if (Deno.args[0] === 'no-bullshit') return 'no-bullshit'
   return 'no-bullshit'
+}
+
+if (import.meta.main) {
+  yargs(Deno.args)
+    .epilogue('for more information, find our manual at http://example.com')
+    .command(HTTP)
+    .example(...HTTP.example)
+    .command(BLOG)
+    .example(...BLOG.example)
+    .command(VITE)
+    .example(...VITE.example)
+    .example([
+      ['tank server-blocks --no-tests'],
+      ['tank add --layouts', 'Create layouts'],
+    ])
+    .strictCommands()
+    .demandCommand(1)
+    .version('0.0.0')
+    .parse()
 }

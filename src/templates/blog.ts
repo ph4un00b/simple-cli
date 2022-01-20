@@ -93,7 +93,7 @@ export const templates: Templates = {
 }
         `,
       'vite.config.js': `import { defineConfig } from "vite";
-  
+
   export default defineConfig({
     build: {
       rollupOptions: {
@@ -103,14 +103,14 @@ export const templates: Templates = {
       },
     },
   });
-  
+
         `,
       'tailwind.config.js': `module.exports = {
     content: ["./index.html", "./**/*.js"],
     darkMode: "class",
     plugins: [],
   };
-  
+
         `,
       'postcss.config.js': `module.exports = {
     plugins: {
@@ -118,23 +118,23 @@ export const templates: Templates = {
       autoprefixer: {},
     },
   };
-  
+
         `,
       'main.js': `import "./styles.css";
-  
+
   // add all your js content...
         `,
       'styles.css': `body {
     font-size: 125%;
     line-height: 1.5;
   }
-  
+
   nav,
   nav ul {
     display: flex;
     flex-flow: row wrap;
   }
-  
+
   nav {
     background: #2b2f2c;
     color: #fff;
@@ -142,31 +142,31 @@ export const templates: Templates = {
     position: sticky;
     top: 0;
   }
-  
+
   nav ul {
     list-style: none;
     margin: 0;
   }
-  
+
   nav li {
     margin-right: 25px;
   }
-  
+
   nav li a {
     color: yellow;
   }
-  
+
   section {
     padding: 1rem 3rem;
   }
-  
+
   section:target {
     background: lightyellow;
   }
           `,
       'index.html': `<!DOCTYPE html>
   <html lang="en">
-  
+
   <head>
       <meta charset="UTF-8">
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -174,7 +174,7 @@ export const templates: Templates = {
       <title>Document</title>
       <link rel="stylesheet" href="./styles.css">
   </head>
-  
+
   <body>
       <article>
           <nav>
@@ -203,7 +203,7 @@ export const templates: Templates = {
                   Voluptatem dignissimos cepturi, adipisci neque eaque quisquam odit laudantium asperiores iste, eius
                   atque totam distinctio enim magnam pariatur non!</p>
           </section>
-  
+
           <section id="section-2">
               <h2>Section 2</h2>
               <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. In sint sunt fuga ut, itaque labore est quos
@@ -220,7 +220,7 @@ export const templates: Templates = {
                   Voluptatem dignissimos cepturi, adipisci neque eaque quisquam odit laudantium asperiores iste, eius
                   atque totam distinctio enim magnam pariatur non!</p>
           </section>
-  
+
           <section id="section-3">
               <h2>Section 3</h2>
               <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. In sint sunt fuga ut, itaque labore est quos
@@ -237,7 +237,7 @@ export const templates: Templates = {
                   Voluptatem dignissimos cepturi, adipisci neque eaque quisquam odit laudantium asperiores iste, eius
                   atque totam distinctio enim magnam pariatur non!</p>
           </section>
-  
+
           <section id="section-4">
               <h2>Section 4</h2>
               <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. In sint sunt fuga ut, itaque labore est quos
@@ -254,7 +254,7 @@ export const templates: Templates = {
                   Voluptatem dignissimos cepturi, adipisci neque eaque quisquam odit laudantium asperiores iste, eius
                   atque totam distinctio enim magnam pariatur non!</p>
           </section>
-  
+
           <section id="section-5">
               <h2>Section 5</h2>
               <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. In sint sunt fuga ut, itaque labore est quos
@@ -283,12 +283,12 @@ export const templates: Templates = {
   yarn-error.log*
   pnpm-debug.log*
   lerna-debug.log*
-  
+
   node_modules
   dist
   dist-ssr
   *.local
-  
+
   # Editor directories and files
   .vscode/*
   !.vscode/extensions.json
@@ -302,7 +302,7 @@ export const templates: Templates = {
   *.sln
   *.sw?
   *.exe
-  
+
   # Firebase
   serviceAccountKey.json
         `,
