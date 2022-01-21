@@ -4,6 +4,9 @@ module.exports = {
     'node': true,
     'es2021': true,
   },
+  'globals': {
+    'Deno': 'readonly'
+  },
   'extends': [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
@@ -17,12 +20,11 @@ module.exports = {
     '@typescript-eslint',
   ],
   'rules': {
-    'no-undef': [
-      'error',
-      { 'Deno': true }
-    ],
+    'no-return-await': 'error',
+    'require-await': 'error',
+    'no-async-promise-executor': 'error',
     'max-lines-per-function': [
-      'error',
+      'warn',
       {
         'max': 10,
         'skipComments': true,
