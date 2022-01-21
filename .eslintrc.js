@@ -17,6 +17,10 @@ module.exports = {
     '@typescript-eslint',
   ],
   'rules': {
+    'no-undef': [
+      'error',
+      { 'Deno': true }
+    ],
     'max-lines-per-function': [
       'error',
       {

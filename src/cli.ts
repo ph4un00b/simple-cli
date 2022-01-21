@@ -24,6 +24,7 @@ import {
   UnfancyFiles,
   UnfancyFilesList,
 } from './templates/blog.ts'
+import { exec } from "./utils.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {}
@@ -109,8 +110,9 @@ type ViteContents = {
 };
 
 async function add_vite({ for_project: name }: { for_project?: string }) {
-  const { unfancy_files: files, file_contents: contents } =
+  const { unfancy_directories, unfancy_files: files, file_contents: contents } =
     templates[selected()]
+  create_directories(unfancy_directories, name)
   create_files({ files, name, contents })
   await exec([_install_vite_config(name)])
   Deno.removeSync(_install_vite_config(name))
@@ -130,16 +132,6 @@ function _install_vite_config(project_name?: string) {
     _write_file(`call cd ${project_name} && npm install`, 'install.bat')
   } else _write_file('call npm install', 'install.bat')
   return './install.bat'
-}
-
-async function exec(cmd: string[]) {
-  const process = Deno.run({ cmd })
-  const status = await process.status()
-  if (status.success == false) {
-    Deno.exit(status.code)
-  } else {
-    process.close()
-  }
 }
 
 type BlogContent = {
@@ -185,11 +177,10 @@ function _text_encode(s: string) {
   return new TextEncoder().encode(s)
 }
 
-function create_directories(directories: string[], name: string) {
+function create_directories(directories: string[], name?: string) {
   for (const dir of directories) {
-    const full_name = `${name}/${dir}`
-    mkdir_p(full_name)
-    console.log(full_name, 'Created folder.')
+    mkdir_p(_full_path(dir, name))
+    console.log(_full_path(dir, name), 'Created folder.')
   }
 }
 

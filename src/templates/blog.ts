@@ -10,7 +10,6 @@ export type UnfancyFilesList = {
   'tailwind.config.js': string;
   'postcss.config.js': string;
   'main.js': string;
-  'install.bat': string;
 };
 
 export type FancyFiles = Array<'index.html' | 'styles.css' | '.gitignore'>;
@@ -20,7 +19,6 @@ export type UnfancyFiles = Array<
   | 'package.json'
   | 'vite.config.js'
   | 'tailwind.config.js'
-  | 'install.bat'
 >;
 
 export type options = 'no-bullshit';
@@ -49,6 +47,7 @@ export type FileContents = {
 type Templates = {
   'no-bullshit': {
     directories: string[];
+    unfancy_directories: string[];
     files: Array<'index.html' | 'styles.css' | '.gitignore'>;
     unfancy_files: Array<
       | 'main.js'
@@ -62,7 +61,8 @@ type Templates = {
 };
 export const templates: Templates = {
   'no-bullshit': {
-    directories: ['images', 'public', 'sections'],
+    directories: ['images'],
+    unfancy_directories: ['public'],
     files: ['index.html', 'styles.css', '.gitignore'],
     unfancy_files: [
       'package.json',
