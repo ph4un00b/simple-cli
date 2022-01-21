@@ -44,7 +44,6 @@ export type FileContents = {
   'tailwind.config.js': string;
   'vite.config.js': string;
   'package.json': string;
-  'install.bat': string;
 };
 
 type Templates = {
@@ -57,7 +56,6 @@ type Templates = {
       | 'package.json'
       | 'vite.config.js'
       | 'tailwind.config.js'
-      | 'install.bat'
     >;
     file_contents: FileContents;
   };
@@ -72,10 +70,8 @@ export const templates: Templates = {
       'tailwind.config.js',
       'postcss.config.js',
       'main.js',
-      'install.bat',
     ],
     file_contents: {
-      'install.bat': 'call npm install',
       'package.json': `{
   "name": "tank-project",
   "version": "0.0.0",

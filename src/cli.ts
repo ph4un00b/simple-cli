@@ -123,10 +123,13 @@ function _echo_vite_message(name?: string): string[] {
     : ['cmd', '/c', 'echo', `Try ${green('npm run dev')}!`]
 }
 
-function _install_vite_config(name?: string) {
+function _install_vite_config(project_name?: string) {
   // on Window { cmd: ["npm", "install"] } throws a NotFound!
   // then I use a BAT file
-  return name ? `cd ./${name} && ./install.bat` : './install.bat'
+  if (project_name) {
+    _write_file(`call cd ${project_name} && npm install`, 'install.bat')
+  } else _write_file('call npm install', 'install.bat')
+  return './install.bat'
 }
 
 async function exec(cmd: string[]) {
@@ -173,9 +176,9 @@ function _full_path(key: string, name?: string) {
   return name ? `${name}/${key}` : key
 }
 
-function _write_file(file_data: string, full_name: string) {
-  Deno.writeFileSync(full_name, _text_encode(file_data), { create: true })
-  console.log(full_name, 'Created file.')
+function _write_file(file_data: string, full_path: string) {
+  Deno.writeFileSync(full_path, _text_encode(file_data), { create: true })
+  console.log(full_path, 'Created file.')
 }
 
 function _text_encode(s: string) {
@@ -210,6 +213,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version('0.2.1')
+    .version('0.2.2.0')
     .parse()
 }
