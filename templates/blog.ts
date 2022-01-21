@@ -1,32 +1,34 @@
 export type FancyFilesList = {
-  'index.html': string;
-  'styles.css': string;
-  '.gitignore': string;
+  "index.html": string;
+  "styles.css": string;
+  ".gitignore": string;
 };
 
 export type UnfancyFilesList = {
-  'package.json': string;
-  'vite.config.js': string;
-  'tailwind.config.js': string;
-  'postcss.config.js': string;
-  'main.js': string;
+  "package.json": string;
+  "vite.config.js": string;
+  "tailwind.config.js": string;
+  "postcss.config.js": string;
+  "main.js": string;
 };
 
-export type FancyFiles = Array<'index.html' | 'styles.css' | '.gitignore'>;
+export type FancyFiles = Array<
+  "index.html" | "styles.css" | ".gitignore"
+>;
 export type UnfancyFiles = Array<
-  | 'main.js'
-  | 'postcss.config.js'
-  | 'package.json'
-  | 'vite.config.js'
-  | 'tailwind.config.js'
+  | "main.js"
+  | "postcss.config.js"
+  | "package.json"
+  | "vite.config.js"
+  | "tailwind.config.js"
 >;
 
-export type options = 'no-bullshit';
+export type options = "no-bullshit";
 
 export interface Arguments {
-  bs: boolean;
-  name: string;
-  configs: boolean;
+  bs?: boolean;
+  name?: string;
+  configs?: boolean;
 }
 
 export interface HTTPArguments {
@@ -34,45 +36,85 @@ export interface HTTPArguments {
 }
 
 export type FileContents = {
-  '.gitignore': string;
-  'styles.css': string;
-  'index.html': string;
-  'main.js': string;
-  'postcss.config.js': string;
-  'tailwind.config.js': string;
-  'vite.config.js': string;
-  'package.json': string;
+  ".gitignore": string;
+  "styles.css": string;
+  "index.html": string;
+  "main.js": string;
+  "postcss.config.js": string;
+  "tailwind.config.js": string;
+  "vite.config.js": string;
+  "package.json": string;
+  "__tank__/defaults.json": string;
+  "__tank__/nunjucks.vite.js": string;
+  "__tank__/vite.js": string;
 };
 
 type Templates = {
-  'no-bullshit': {
+  "no-bullshit": {
     directories: string[];
     unfancy_directories: string[];
-    files: Array<'index.html' | 'styles.css' | '.gitignore'>;
+    files: Array<
+      "index.html" | "styles.css" | ".gitignore"
+    >;
     unfancy_files: Array<
-      | 'main.js'
-      | 'postcss.config.js'
-      | 'package.json'
-      | 'vite.config.js'
-      | 'tailwind.config.js'
+      | "main.js"
+      | "postcss.config.js"
+      | "package.json"
+      | "vite.config.js"
+      | "tailwind.config.js"
+      | "__tank__/defaults.json"
+      | "__tank__/nunjucks.vite.js"
+      | "__tank__/vite.js"
     >;
     file_contents: FileContents;
   };
 };
 export const templates: Templates = {
-  'no-bullshit': {
-    directories: ['images'],
-    unfancy_directories: ['public'],
-    files: ['index.html', 'styles.css', '.gitignore'],
+  "no-bullshit": {
+    directories: ["images"],
+    unfancy_directories: ["public", "__tank__"],
+    files: ["index.html", "styles.css", ".gitignore"],
     unfancy_files: [
-      'package.json',
-      'vite.config.js',
-      'tailwind.config.js',
-      'postcss.config.js',
-      'main.js',
+      "package.json",
+      "vite.config.js",
+      "tailwind.config.js",
+      "postcss.config.js",
+      "main.js",
+      "__tank__/defaults.json",
+      "__tank__/nunjucks.vite.js",
+      "__tank__/vite.js",
     ],
     file_contents: {
-      'package.json': `{
+      "__tank__/defaults.json": `{
+  "nunjucks": {
+    "dirname": "sections"
+  }
+}
+      `,
+      "__tank__/vite.js":
+        `const { NunjucksPlugin } = require("./nunjucks.vite");
+
+const TankPlugins = [...NunjucksPlugin];
+
+module.exports = { TankPlugins };
+      `,
+      "__tank__/nunjucks.vite.js":
+        `const tank = require("./defaults.json");
+
+const { default: nunjucks } = require("vite-plugin-nunjucks");
+
+const NunjucksConfig = {
+  templatesDir: tank.nunjucks.dirname,
+  variables: {},
+};
+
+const NunjucksPlugin = [nunjucks(NunjucksConfig)];
+
+module.exports = {
+  NunjucksConfig,
+  NunjucksPlugin,
+};`,
+      "package.json": `{
   "name": "tank-project",
   "version": "0.0.0",
   "scripts": {
@@ -84,31 +126,35 @@ export const templates: Templates = {
     "autoprefixer": "10.4.0",
     "postcss": "8.4",
     "tailwindcss": "3.0.15",
-    "vite": "2.7.13"
+    "vite": "2.7.13",
+    "vite-plugin-nunjucks": "0.1.10"
   }
 }
         `,
-      'vite.config.js': `import { defineConfig } from "vite";
-
-  export default defineConfig({
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks: null,
-        },
+      "vite.config.js":
+        `const { defineConfig } = require("vite");
+const { TankPlugins } = require("./__tank__/vite");
+const viteConfigs = {
+  plugins: [...TankPlugins],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: null,
       },
     },
-  });
+  },
+};
+module.exports = defineConfig(viteConfigs);
 
         `,
-      'tailwind.config.js': `module.exports = {
+      "tailwind.config.js": `module.exports = {
     content: ["./index.html", "./**/*.js"],
     darkMode: "class",
     plugins: [],
   };
 
         `,
-      'postcss.config.js': `module.exports = {
+      "postcss.config.js": `module.exports = {
     plugins: {
       tailwindcss: {},
       autoprefixer: {},
@@ -116,11 +162,11 @@ export const templates: Templates = {
   };
 
         `,
-      'main.js': `import "./styles.css";
+      "main.js": `import "./styles.css";
 
   // add all your js content...
         `,
-      'styles.css': `body {
+      "styles.css": `body {
     font-size: 125%;
     line-height: 1.5;
   }
@@ -160,7 +206,7 @@ export const templates: Templates = {
     background: lightyellow;
   }
           `,
-      'index.html': `<!DOCTYPE html>
+      "index.html": `<!DOCTYPE html>
   <html lang="en">
 
   <head>
@@ -271,36 +317,36 @@ export const templates: Templates = {
   </body>
   </html>
           `,
-      '.gitignore': `# Logs
-  logs
-  *.log
-  npm-debug.log*
-  yarn-debug.log*
-  yarn-error.log*
-  pnpm-debug.log*
-  lerna-debug.log*
+      ".gitignore": `# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-  node_modules
-  dist
-  dist-ssr
-  *.local
+node_modules
+dist
+dist-ssr
+*.local
 
-  # Editor directories and files
-  .vscode/*
-  !.vscode/extensions.json
-  !.vscode/settings.json
-  .idea
-  .DS_Store
-  *~
-  *.suo
-  *.ntvs*
-  *.njsproj
-  *.sln
-  *.sw?
-  *.exe
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+.DS_Store
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.exe
 
-  # Firebase
-  serviceAccountKey.json
+# Firebase
+serviceAccountKey.json
         `,
     },
   },

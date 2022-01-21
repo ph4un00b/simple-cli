@@ -1,0 +1,18 @@
+# dev
+
+- e2e:
+$ deno test --allow-read --allow-run --allow-write --allow-env --allow-ffi
+.\e2e\tank.js
+
+- tests:
+$ deno test --allow-read --allow-run --allow-write --unstable --allow-env --allow-ffi . --ignore=node_modules
+
+- eslint:
+$ npm install -D -E eslint
+$ npm install -D -E @typescript-eslint/parser
+$ npm install -D -E @typescript-eslint/eslint-plugin
+
+- eslint: set on vscode settings
+$ npm ls
+- vcode:
+    "eslint.runtime": "...PATH\\node_modules\\.bin\\eslint",

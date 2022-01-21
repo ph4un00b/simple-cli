@@ -1,70 +1,71 @@
 /* eslint-disable linebreak-style */
 module.exports = {
-  'env': {
-    'node': true,
-    'es2021': true,
+  "env": {
+    "node": true,
+    "es2021": true,
   },
-  'globals': {
-    'Deno': 'readonly'
+  "globals": {
+    "Deno": "readonly",
   },
-  'extends': [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
   ],
-  'parser': '@typescript-eslint/parser',
-  'parserOptions': {
-    'ecmaVersion': 'latest',
-    'sourceType': 'module',
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module",
   },
-  'plugins': [
-    '@typescript-eslint',
+  "plugins": [
+    "@typescript-eslint",
   ],
-  'rules': {
-    'no-return-await': 'error',
-    'require-await': 'error',
-    'no-async-promise-executor': 'error',
-    'max-lines-per-function': [
-      'warn',
+  "rules": {
+    "no-return-await": "error",
+    "require-await": "error",
+    "no-async-promise-executor": "error",
+    "max-lines-per-function": [
+      "warn",
       {
-        'max': 10,
-        'skipComments': true,
+        "max": 11,
+        "skipComments": true,
+        "skipBlankLines": true,
       },
     ],
-    'max-params': [
-      'error',
+    "max-params": [
+      "error",
       2,
     ],
-    'max-statements-per-line': [
-      'error',
+    "max-statements-per-line": [
+      "error",
       {
-        'max': 2,
+        "max": 2,
       },
     ],
-    'complexity': [
-      'error',
+    "complexity": [
+      "error",
       8,
     ],
-    'no-shadow': 'error',
-    'no-else-return': 'error',
-    'no-console': 1,
-    'indent': [
-      'error',
+    "no-shadow": "error",
+    "no-else-return": "error",
+    "no-console": 1,
+    "indent": [
+      "error",
       2,
     ],
-    'linebreak-style': [
-      'error',
-      'unix',
+    "linebreak-style": [
+      "error",
+      "unix",
     ],
-    'quotes': [
-      'error',
-      'single',
+    "quotes": [
+      "error",
+      "double",
     ],
-    'semi': [
-      'error',
-      'never',
+    "semi": [
+      "error",
+      "never",
     ],
-    'no-trailing-spaces': [
-      'error'
-    ]
+    "no-trailing-spaces": [
+      "error",
+    ],
   },
-}
+};
