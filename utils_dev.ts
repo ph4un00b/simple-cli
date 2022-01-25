@@ -2,20 +2,20 @@ import { Actions, CreateFiles } from "./actions.ts"
 
 type Call = { call: number };
 
-interface ActionsMock {
-  executed: (a: Call) => { arg: string[]; args: string[][] };
-  directories: (a: Call) => { arg: string[]; args: string[][] };
-  file: (a: Call) => { arg: string[]; args: string[][] };
-  appended: (a: Call) => { arg: string[]; args: string[][] };
-  files: (a: Call) => { arg: CreateFiles; args: CreateFiles[] };
-  get_removals: (a: Call) => { arg: string; args: string[] };
-  dir: (a: Call) => { arg: string; args: string[] };
-  logged: (a: Call) => { arg: string; args: string[] };
+export interface ActionsMock {
+  executed: (a: Call) => { args: string[]; calls: string[][] };
+  directories: (a: Call) => { args: string[]; calls: string[][] };
+  _create_file: (a: Call) => { args: string[]; calls: string[][] };
+  _append_block: (a: Call) => { args: string[]; calls: string[][] };
+  files: (a: Call) => { args: CreateFiles; calls: CreateFiles[] };
+  get_removals: (a: Call) => { args: string; calls: string[] };
+  _create_dir: (a: Call) => { args: string; calls: string[] };
+  logged: (a: Call) => { args: string; calls: string[] };
   restore: () => void;
   vite_configs(bool: boolean): void;
 }
 
-export const actionsMock: ActionsMock = (function () {
+export const actionsMock: Actions & ActionsMock = (function () {
   let commands: string[][] = []
   let directories: string[][] = []
   let files: CreateFiles[] = []
@@ -54,17 +54,17 @@ export const actionsMock: ActionsMock = (function () {
   }
 
   return {
-    files: ({ call }: Call) => ({ arg: files[call], args: files }),
-    executed: ({ call }: Call) => ({ arg: commands[call], args: commands }),
+    files: ({ call }: Call) => ({ args: files[call], calls: files }),
+    executed: ({ call }: Call) => ({ args: commands[call], calls: commands }),
     directories: ({ call }: Call) => ({
-      arg: directories[call],
-      args: directories,
+      args: directories[call],
+      calls: directories,
     }),
-    file: ({ call }: Call) => ({ arg: file[call], args: file }),
-    get_removals: ({ call }: Call) => ({ arg: removals[call], args: removals }),
-    dir: ({ call }: Call) => ({ arg: dir[call], args: dir }),
-    appended: ({ call }: Call) => ({ arg: blocks[call], args: blocks }),
-    logged: ({ call }: Call) => ({ arg: out[call], args: out }),
+    _create_file: ({ call }: Call) => ({ args: file[call], calls: file }),
+    get_removals: ({ call }: Call) => ({ args: removals[call], calls: removals }),
+    _create_dir: ({ call }: Call) => ({ args: dir[call], calls: dir }),
+    _append_block: ({ call }: Call) => ({ args: blocks[call], calls: blocks }),
+    logged: ({ call }: Call) => ({ args: out[call], calls: out }),
     exist: () => _is_file,
     vite_configs(bool: boolean) {
       _is_file = bool

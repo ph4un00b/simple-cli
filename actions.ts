@@ -1,4 +1,5 @@
 import { ensureDirSync as mkdir_p } from "https://deno.land/std@0.121.0/fs/mod.ts"
+import * as path from "https://deno.land/std/path/mod.ts"
 import {
   DOMParser,
   Element,
@@ -11,10 +12,7 @@ import {
   UnfancyFilesList,
 } from "./templates/blog.ts"
 
-import {
-  WalkEntry,
-  walkSync,
-} from "https://deno.land/std@0.122.0/fs/mod.ts"
+import { WalkEntry, walkSync } from "https://deno.land/std@0.122.0/fs/mod.ts"
 
 export type Actions = {
   create_directories: (
@@ -57,8 +55,14 @@ export const actions: Actions = (function () {
   }
 
   function create_file(full_path: string, content: string) {
+    // TODO: e2e test dont overwrite
+    for (const entry of walkSync("blocks", { maxDepth: 1})) {
+      if (path.basename(full_path) === path.basename(entry.path)) {
+        return stdOut("\n" + full_path + " Already Created file.")
+      }
+    }
     _write_file(content, full_path)
-    stdOut(full_path + " Created file.")
+    stdOut("\n" + full_path + " Created file.")
   }
 
   async function exec(cmd: string[]) {
@@ -78,8 +82,13 @@ export const actions: Actions = (function () {
   function append_block(name: string, main_html: string) {
     const block = "{% include \"blocks/" + name + ".html" +
       "\" %}"
-    _append(main_html, block)
-    stdOut("You can include this block on your main html.")
+    try {
+      _append(main_html, block)
+    } catch (e) {
+      stdOut(`\n\n${main_html} not found.\n`)
+    }
+
+    stdOut(`\nYou can include this code below on your main ${main_html}.`)
     stdOut("\n\n" + block + "\n\n")
   }
 
@@ -102,17 +111,15 @@ export const actions: Actions = (function () {
 function _filtered_files(files: FilesList[]) {
   const created_files: FilesList[] = []
 
-  for (const entry of walkSync(".")) {
+  for (const entry of walkSync(".", {maxDepth: 1})) {
     console.log("walked", entry.path)
     _filter_files({ entry, files, created_files })
   }
 
-  return files.filter((file) =>
-    !created_files.includes(file)
-  )
+  return files.filter((file) => !created_files.includes(file))
 }
 
-type FilesList = FancyFilesList | UnfancyFilesList;
+type FilesList = FancyFilesList | UnfancyFilesList | string;
 
 type Filter = {
   entry: WalkEntry;

@@ -1,3 +1,9 @@
+const TANK = {
+  default_file: "__tank__/defaults.js",
+  nunjucks_file: "__tank__/nunjucks.plugin.js",
+  plugins_file: "__tank__/plugins.js"
+}
+
 export type FancyFilesList = {
   "index.html": string;
   "styles.css": string;
@@ -12,9 +18,7 @@ export type UnfancyFilesList = {
   "main.js": string;
 };
 
-export type FancyFiles = Array<
-  "index.html" | "styles.css" | ".gitignore"
->;
+export type FancyFiles = Array<"index.html" | "styles.css" | ".gitignore">;
 export type UnfancyFiles = Array<
   | "main.js"
   | "postcss.config.js"
@@ -44,27 +48,24 @@ export type FileContents = {
   "tailwind.config.js": string;
   "vite.config.js": string;
   "package.json": string;
-  "__tank__/defaults.json": string;
-  "__tank__/nunjucks.vite.js": string;
-  "__tank__/vite.js": string;
+  [key: string]: string;
 };
 
 type Templates = {
   "no-bullshit": {
     directories: string[];
     unfancy_directories: string[];
-    files: Array<
-      "index.html" | "styles.css" | ".gitignore"
-    >;
+    files: Array<"index.html" | "styles.css" | ".gitignore">;
     unfancy_files: Array<
       | "main.js"
       | "postcss.config.js"
       | "package.json"
       | "vite.config.js"
       | "tailwind.config.js"
-      | "__tank__/defaults.json"
+      | "__tank__/defaults.js"
       | "__tank__/nunjucks.vite.js"
       | "__tank__/vite.js"
+      | string
     >;
     file_contents: FileContents;
   };
@@ -80,71 +81,143 @@ export const templates: Templates = {
       "tailwind.config.js",
       "postcss.config.js",
       "main.js",
-      "__tank__/defaults.json",
-      "__tank__/nunjucks.vite.js",
-      "__tank__/vite.js",
+      TANK.default_file,
+      TANK.nunjucks_file,
+      TANK.plugins_file,
     ],
     file_contents: {
-      "__tank__/defaults.json": `{
-  "nunjucks": {
-    "dirname": "sections"
-  }
-}
-      `,
-      "__tank__/vite.js":
-        `const { NunjucksPlugin } = require("./nunjucks.vite");
+      [TANK.default_file]: `module.exports = {
+  blocks: {
+    dirname: "blocks",
+    data_suffix: "items",
+    api_suffix: "api_items"
+  },
+  nunjucks: {
+    dirname: "src/html",
+  },
+};`,
+      [TANK.plugins_file]: `const nunjucks = require("./nunjucks.plugin");
 
-const TankPlugins = [...NunjucksPlugin];
+module.exports = async function () {
+  const { dev, prod } = await nunjucks();
+  return { dev, prod };
+};`,
+      [TANK.nunjucks_file]: `const _nunjucks = require("vite-plugin-nunjucks").default;
+const _TANK_ = require("./defaults.js");
+const _parse = require("path").parse;
+const _glob = require("tiny-glob");
 
-module.exports = { TankPlugins };
-      `,
-      "__tank__/nunjucks.vite.js":
-        `const tank = require("./defaults.json");
+module.exports = async function () {
+  const data_items = await dataObjects().catch(console.error);
+  const dev_items = await apiObjects({ for: "dev" }).catch(console.error);
+  const prod_items = await apiObjects({ for: "prod" }).catch(console.error);
 
-const { default: nunjucks } = require("vite-plugin-nunjucks");
-
-const NunjucksConfig = {
-  templatesDir: tank.nunjucks.dirname,
-  variables: {},
+  return {
+    dev: NunjuckPlugin({ ...data_items, ...dev_items }),
+    prod: NunjuckPlugin({ ...data_items, ...prod_items }),
+  };
 };
 
-const NunjucksPlugin = [nunjucks(NunjucksConfig)];
+function NunjuckPlugin(variables) {
+  const NunjucksConfig = {
+    templatesDir: _TANK_.nunjucks.dirname,
+    variables: { "*": { ...variables } },
+  };
 
-module.exports = {
-  NunjucksConfig,
-  NunjucksPlugin,
-};`,
+  const NunjucksPlugin = [_nunjucks(NunjucksConfig)];
+  return { NunjucksPlugin };
+}
+
+async function apiObjects({ for: kind }) {
+  const data = await _glob(_for_api(kind)).catch(console.error);
+  return await data.reduce(_format_api_items, {});
+}
+
+async function dataObjects() {
+  const data = await _glob(_for_data()).catch(console.error);
+  return data.reduce(_format_data_items, {});
+}
+
+async function _format_api_items(memo, path) {
+  return { ...memo, [_api_name(path)]: await _api_content(path) };
+}
+
+function _format_data_items(memo, path) {
+  return { ...memo, [_data_name(path)]: _data_content(path) };
+}
+
+async function _api_content(path) {
+  const api = require("./" + path);
+  return await api();
+}
+
+function _data_content(path) {
+  return require("./" + path);
+}
+
+function _for_api(kind) {
+  return \`\${_TANK_.blocks.dirname}/*.api.\${kind}.js\`;
+}
+
+function _for_data() {
+  return \`\${_TANK_.blocks.dirname}/*.data.json\`;
+}
+
+function _data_name(path) {
+  const [name, ...rest] = _parse(path).name.split(".");
+  return \`\${name}_\${_TANK_.blocks.data_suffix}\`;
+}
+
+function _api_name(path) {
+  const [name, ...rest] = _parse(path).name.split(".");
+  return \`\${name}_\${_TANK_.blocks.api_suffix}\`;
+}`,
       "package.json": `{
   "name": "tank-project",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --mode staging",
+    "build-prod": "vite build --mode production",
     "preview": "vite preview"
   },
   "devDependencies": {
     "autoprefixer": "10.4.0",
+    "axios": "0.25.0",
     "postcss": "8.4",
     "tailwindcss": "3.0.15",
+    "tiny-glob": "0.2.9",
     "vite": "2.7.13",
     "vite-plugin-nunjucks": "0.1.10"
   }
 }
         `,
-      "vite.config.js":
-        `const { defineConfig } = require("vite");
-const { TankPlugins } = require("./__tank__/vite");
-const viteConfigs = {
-  plugins: [...TankPlugins],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: null,
+      "vite.config.js": `import { defineConfig } from "vite";
+import plugins from "./__tank__/plugins";
+
+export default defineConfig(async ({ mode }) => {
+  const { dev, prod } = await plugins();
+
+  /**
+   * @type {import('vite').UserConfig}
+   */
+  const viteConfigs = {
+    plugins: [...TankPlugins(mode, prod, dev)],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: null,
+        },
       },
     },
-  },
-};
-module.exports = defineConfig(viteConfigs);
+  };
+
+  return viteConfigs;
+});
+
+function TankPlugins(mode, prod, dev) {
+  return mode === "production" ? prod.NunjucksPlugin : dev.NunjucksPlugin;
+}
 
         `,
       "tailwind.config.js": `module.exports = {

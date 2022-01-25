@@ -7,19 +7,20 @@ import {
 
 import { tank } from "./tank.ts"
 import { actionsMock as mock } from "./utils_dev.ts"
-
 Deno.test("tank can create a fancy blog", async () => {
   await tank(mock).blog_handler({ name: "test" })
 
-  assertEquals(mock.files({ call: 0 }).arg.name, "test")
-  assertEquals(mock.directories({ call: 0 }).arg, ["images"])
-  assertEquals(mock.files({ call: 0 }).arg.files, [
-    "index.html",
-    "styles.css",
-    ".gitignore",
-  ])
-
-  mock.restore()
+  try {
+    assertEquals(mock.files({ call: 0 }).args.name, "test")
+    assertEquals(mock.directories({ call: 0 }).args, ["images"])
+    assertEquals(mock.files({ call: 0 }).args.files, [
+      "index.html",
+      "styles.css",
+      ".gitignore",
+    ])
+  } finally {
+    mock.restore()
+  }
 })
 
 Deno.test("tank can create an unfancy blog on Windows", async () => {
@@ -28,41 +29,32 @@ Deno.test("tank can create an unfancy blog on Windows", async () => {
     bs: true,
   })
 
-  assertEquals(mock.files({ call: 0 }).arg.name, "test")
-  assertEquals(mock.directories({ call: 0 }).arg, ["images"])
-  assertEquals(mock.files({ call: 0 }).arg.files, [
-    "index.html",
-    "styles.css",
-    ".gitignore",
-  ])
+  try {
+    assertEquals(mock.files({ call: 0 }).args.name, "test")
+    assertEquals(mock.directories({ call: 0 }).args, ["images"])
+    assertEquals(mock.files({ call: 0 }).args.files, [
+      "index.html",
+      "styles.css",
+      ".gitignore",
+    ])
 
-  assertEquals(mock.directories({ call: 1 }).arg, ["public", "__tank__"])
-  assertEquals(mock.files({ call: 1 }).arg.files, [
-    "package.json",
-    "vite.config.js",
-    "tailwind.config.js",
-    "postcss.config.js",
-    "main.js",
-    "__tank__/defaults.json",
-    "__tank__/nunjucks.vite.js",
-    "__tank__/vite.js",
-  ])
+    assertViteConfigs({ folder: "test", call: 1 })
 
-  assertEquals(mock.files({ call: 1 }).arg.name, "test")
-  assertEquals(mock.executed({ call: 0 }).arg, [
-    "cmd",
-    "/c",
-    "cd",
-    "test",
-    "&&",
-    "cmd",
-    "/c",
-    "npm",
-    "install",
-  ])
-  assertOutput("Try cd test && \x1b[32mnpm run dev\x1b[39m!")
-
-  mock.restore()
+    assertEquals(mock.executed({ call: 0 }).args, [
+      "cmd",
+      "/c",
+      "cd",
+      "test",
+      "&&",
+      "cmd",
+      "/c",
+      "npm",
+      "install",
+    ])
+    assertOutput("Try cd test && \x1b[32mnpm run dev\x1b[39m!")
+  } finally {
+    mock.restore()
+  }
 })
 
 Deno.test(
@@ -70,26 +62,37 @@ Deno.test(
   async () => {
     await tank(mock).vite_handler()
 
-    assertViteConfigs()
-
-    mock.restore()
+    try {
+      assertViteConfigs({ call: 0 })
+      assertEquals(mock.executed({ call: 0 }).args, [
+        "cmd",
+        "/c",
+        "npm",
+        "install",
+      ])
+      assertOutput("Try \x1b[32mnpm run dev\x1b[39m!")
+    } finally {
+      mock.restore()
+    }
   },
 )
 
 Deno.test("tank can create a html block", () => {
   tank(mock).generate_handler({ html: ["sidebar"] })
 
-  assertEquals(mock.dir({ call: 0 }).arg, "blocks")
+  try {
+    assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
 
-  const [file, content] = mock.file({ call: 0 }).arg
-  assertEquals(file, "blocks/sidebar.html")
-  assertEquals(content, "<h1>sidebar</h1>")
+    const [file, content] = mock._create_file({ call: 0 }).args
+    assertEquals(file, "blocks/sidebar.html")
+    assertEquals(content, "<h1>sidebar</h1>")
 
-  const [name, index] = mock.appended({ call: 0 }).arg
-  assertEquals(name, "sidebar")
-  assertEquals(index, "index.html")
-
-  mock.restore()
+    const [name, index] = mock._append_block({ call: 0 }).args
+    assertEquals(name, "sidebar")
+    assertEquals(index, "index.html")
+  } finally {
+    mock.restore()
+  }
 })
 
 Deno.test("tank can create multiple html block at once", () => {
@@ -97,92 +100,151 @@ Deno.test("tank can create multiple html block at once", () => {
     html: ["header", "sidebar", "footer"],
   })
 
-  assertHTMLBlock({ call: 0, name: "header" })
-  assertHTMLBlock({ call: 1, name: "sidebar" })
-  assertHTMLBlock({ call: 2, name: "footer" })
-
-  mock.restore()
+  try {
+    assertHTMLBlock({ call: 0, name: "header" })
+    assertHTMLBlock({ call: 1, name: "sidebar" })
+    assertHTMLBlock({ call: 2, name: "footer" })
+  } finally {
+    mock.restore()
+  }
 })
 
 Deno.test("tank can create a data block", () => {
   tank(mock).generate_handler({ data: ["list"] })
 
-  assertHTMLBlock({ call: 0, name: "list" })
+  try {
+    assertDataBlock({ call: 0, name: "list" })
 
-  const [file, content] = mock.file({ call: 1 }).arg
-  assertEquals(file, "blocks/list.json")
-  assertEquals(
-    content,
-    "[{\"title\":\"a nice title\",\"content\":\"a cool content\"},{\"title\":\"second title\",\"content\":\"more content\"}]",
-  )
-
-  mock.restore()
+    const [file, content] = mock._create_file({ call: 1 }).args
+    assertEquals(file, "blocks/list.data.json")
+    assertEquals(
+      content,
+      "[\n  {\n    \"title\": \"a nice list\",\n    \"content\": \"a cool content for list\"\n  },\n  {\n    \"title\": \"second title\",\n    \"content\": \"more content for list\"\n  }\n]",
+    )
+  } finally {
+    mock.restore()
+  }
 })
 
 Deno.test("tank can create multiple data blocks at once", () => {
   tank(mock).generate_handler({ data: ["list1", "sections"] })
 
-  assertEquals(mock.dir({ call: 0 }).arg, "blocks")
-  assertDataBlock({call:0, name:"list1"})
-  const [name_block, index] = mock.appended({ call: 0, }).arg
-  assertEquals(name_block, "list1")
-  assertEquals(index, "index.html")
+  try {
+    assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
+    assertDataBlock({ call: 0, name: "list1" })
+    const [name_block, index] = mock._append_block({ call: 0 }).args
+    assertEquals(name_block, "list1")
+    assertEquals(index, "index.html")
 
-  assertEquals(mock.dir({ call: 1 }).arg, "blocks")
-  assertDataBlock({call:2, name:"sections"})
-  const [name_block2, index2] = mock.appended({ call: 1, }).arg
-  assertEquals(name_block2, "sections")
-  assertEquals(index2, "index.html")
-
-  mock.restore()
+    assertEquals(mock._create_dir({ call: 1 }).args, "blocks")
+    assertDataBlock({ call: 2, name: "sections" })
+    const [name_block2, index2] = mock._append_block({ call: 1 }).args
+    assertEquals(name_block2, "sections")
+    assertEquals(index2, "index.html")
+  } finally {
+    mock.restore()
+  }
 })
 
-function assertDataBlock({call, name}:{call: number, name: string}) {
+Deno.test("tank can create an api block", () => {
+  tank(mock).generate_handler({ api: ["events"] })
+  const call = 0
+  const name = "events"
+  try {
+    assertEquals(mock._create_dir({ call }).args, "blocks")
 
-  const [file, content] = mock.file({ call }).arg
+    assertApiBlock({call, name})
+
+    const [name_block, index] = mock._append_block({ call }).args
+    assertEquals(name_block, name)
+    assertEquals(index, "index.html")
+  } finally {
+    mock.restore()
+  }
+})
+
+function assertApiBlock({call, name}:{call: number, name: string}) {
+  const [file, content] = mock._create_file({ call }).args
   assertEquals(file, `blocks/${name}.html`, `${name}.html not created.`)
-  assertEquals(content, `<h1>${name}</h1>`, `${name}.html diff content.`)
+  assert(content.split("\n").includes(`    ${name} api block`), content)
 
-  const [file2, content2] = mock.file({ call: call + 1 }).arg
-  assertEquals(file2, `blocks/${name}.json`, `${name}.json not created.`)
+  const [file2, content2] = mock._create_file({ call: call + 1 }).args
+  assertEquals(
+    file2,
+    `blocks/${name}.api.dev.js`,
+    `${name}.api.dev.js not created.`
+  )
+  assert(
+    content2.split("\n").includes(
+      "    \"https://animechan.vercel.app/api/quotes/anime?title=zero+kara\","
+    ),
+    content2
+  )
+
+  const [file3, content3] = mock._create_file({ call: call + 2 }).args
+  assert(
+    content3.split("\n").includes(
+      "    \"https://animechan.vercel.app/api/quotes/anime?title=saint+seiya\","
+    ),
+    content3
+  )
+  assertEquals(
+    file3,
+    `blocks/${name}.api.prod.js`,
+    `${name}.api.prod.js not created.`
+  )
+}
+
+function assertDataBlock({ call, name }: { call: number; name: string }) {
+  const [file, content] = mock._create_file({ call }).args
+  assertEquals(file, `blocks/${name}.html`, `${name}.html not created.`)
+  assert(content.split("\n").includes(`        ${name} block`), content)
+
+  const [file2, content2] = mock._create_file({ call: call + 1 }).args
+  assertEquals(
+    file2,
+    `blocks/${name}.data.json`,
+    `${name}.data.json not created.`,
+  )
   assertEquals(
     content2,
-    "[{\"title\":\"a nice title\",\"content\":\"a cool content\"},{\"title\":\"second title\",\"content\":\"more content\"}]",
-    `${name}.json diff content.`
+    "[\n  {\n    \"title\": \"a nice " + name +
+      "\",\n    \"content\": \"a cool content for " + name +
+      "\"\n  },\n  {\n    \"title\": \"second title\",\n    \"content\": \"more content for " +
+      name + "\"\n  }\n]",
   )
 }
 
 function assertOutput(text: string) {
-  assertEquals(mock.logged({ call: 0 }).arg, text)
+  assertEquals(mock.logged({ call: 0 }).args, text)
 }
 
 function assertHTMLBlock({ call, name }: { call: number; name: string }) {
-  const [file, content] = mock.file({ call }).arg
-  assertEquals(mock.dir({ call }).arg, "blocks")
+  const [file, content] = mock._create_file({ call }).args
+  assertEquals(mock._create_dir({ call }).args, "blocks")
   assertEquals(file, `blocks/${name}.html`)
-  assertEquals(content, `<h1>${name}</h1>`)
+  assert(content.split("\n").includes(`<h1>${name}</h1>`))
 
-  const [name_block, index] = mock.appended({
+  const [name_block, index] = mock._append_block({
     call,
-  }).arg
+  }).args
   assertEquals(name_block, name)
   assertEquals(index, "index.html")
 }
 
-function assertViteConfigs() {
-  assertEquals(mock.files({ call: 0 }).arg.name, undefined)
-  assertEquals(mock.directories({ call: 0 }).arg, ["public", "__tank__"])
-  assertEquals(mock.files({ call: 0 }).arg.files, [
+function assertViteConfigs(
+  { folder, call }: { call: number; folder?: string },
+) {
+  assertEquals(mock.files({ call }).args.name, folder)
+  assertEquals(mock.directories({ call }).args, ["public", "__tank__"])
+  assertEquals(mock.files({ call }).args.files, [
     "package.json",
     "vite.config.js",
     "tailwind.config.js",
     "postcss.config.js",
     "main.js",
-    "__tank__/defaults.json",
-    "__tank__/nunjucks.vite.js",
-    "__tank__/vite.js",
+    "__tank__/defaults.js",
+    "__tank__/nunjucks.plugin.js",
+    "__tank__/plugins.js",
   ])
-
-  assertEquals(mock.executed({ call: 0 }).arg, ["cmd", "/c", "npm", "install"])
-  assertOutput("Try \x1b[32mnpm run dev\x1b[39m!")
 }
