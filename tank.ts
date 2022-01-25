@@ -1,8 +1,5 @@
-// --allow-read --allow-write --unstable --no-check --allow-run
 import yargs from "https://deno.land/x/yargs/deno.ts"
-import {
-  green,
-} from "https://deno.land/std@0.121.0/fmt/colors.ts"
+import { green } from "https://deno.land/std@0.121.0/fmt/colors.ts"
 
 import {
   Arguments,
@@ -38,11 +35,14 @@ export function tank(spec: any) {
   } = spec
 
   function generate_handler(
-    { html: html_blocks }: { html: string[] },
+    { html, data }: { html?: string[]; data?: string[] },
   ) {
-    html_blocks.forEach((block_name) =>
-      create_html_block(block_name)
-    )
+    if (html && html.length > 0) {
+      html.forEach((block) => create_html_block(block))
+    }
+    if (data && data.length > 0) {
+      data.forEach((block) => create_data_block(block))
+    }
   }
 
   async function vite_handler() {
@@ -61,10 +61,22 @@ export function tank(spec: any) {
 
   function create_html_block(name: string) {
     create_dir("blocks")
-    create_file(
-      `blocks/${name}.html`,
-      `<h1>${name}</h1>`,
-    )
+    create_file(`blocks/${name}.html`, `<h1>${name}</h1>`)
+    append_block(name, "index.html")
+  }
+
+  // eslint-disable-next-line max-lines-per-function
+  function create_data_block(name: string) {
+    create_dir("blocks")
+    create_file(`blocks/${name}.html`, `<h1>${name}</h1>`)
+
+    create_file(`blocks/${name}.json`, JSON.stringify([{
+      title: "a nice title",
+      content: "a cool content"
+    },{
+      title: "second title",
+      content: "more content"
+    }]))
     append_block(name, "index.html")
   }
 
@@ -131,8 +143,7 @@ const p_opt = {
 const HTTP = {
   command: "<http>",
   describe: "Simple HTTP Server.",
-  builder: (cli: YargsInstance) =>
-    cli.options({ "p": p_opt }),
+  builder: (cli: YargsInstance) => cli.options({ "p": p_opt }),
   handler: tank(actions).http_handler,
   example: ["tank http", "Simple HTTP Server."],
 }
@@ -147,16 +158,14 @@ const name_opt = {
 const bs_opt = {
   alias: "bs",
   default: false,
-  describe:
-    "Adds postcss, tailwind, vite and npm configurations.",
+  describe: "Adds postcss, tailwind, vite and npm configurations.",
   type: "boolean",
 }
 
 const BLOG = {
   command: "<blog>",
   describe: "Create blog project.",
-  builder: (cli: YargsInstance) =>
-    cli.options({ "n": name_opt, "b": bs_opt }),
+  builder: (cli: YargsInstance) => cli.options({ "n": name_opt, "b": bs_opt }),
   handler: tank(actions).blog_handler,
   example: [
     "tank blog --name my-blog --no-bs",
@@ -243,6 +252,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.3.0.0")
+    .version("0.4.0.0")
     .parse()
 }
