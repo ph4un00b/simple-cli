@@ -59,7 +59,7 @@ export function tank(spec: Actions) {
     <section class="flex flex-col flex-wrap sm:flex-row">
         <!-- items from *.api.{dev,prod}.json have a "_api_items" suffix -->
         <!-- you can change the suffix in "__tank__/defaults.js" -->
-        {% for item in eventos_api_items %}
+        {% for item in ${name}_api_items %}
         <article class="flex flex-col items-center justify-center w-full sm:w-1/4">
             <header>
                 <picture class="flex justify-center p-3">

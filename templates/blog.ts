@@ -130,12 +130,14 @@ function NunjuckPlugin(variables) {
 
 async function apiObjects({ for: kind }) {
   const data = await _glob(_for_api(kind)).catch(console.error);
-  return await data.reduce(_format_api_items, {});
+  if (data) return await data.reduce(_format_api_items, {});
+  return;
 }
 
 async function dataObjects() {
   const data = await _glob(_for_data()).catch(console.error);
-  return data.reduce(_format_data_items, {});
+  if (data) return data.reduce(_format_data_items, {});
+  return;
 }
 
 async function _format_api_items(memo, path) {
