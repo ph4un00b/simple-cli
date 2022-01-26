@@ -1,5 +1,9 @@
 import yargs from "https://deno.land/x/yargs/deno.ts"
-import { green } from "https://deno.land/std@0.121.0/fmt/colors.ts"
+import {
+  brightCyan,
+  brightRed,
+  green,
+} from "https://deno.land/std@0.121.0/fmt/colors.ts"
 
 import {
   Arguments,
@@ -12,7 +16,7 @@ import {
 
 import { Actions, actions } from "./actions.ts"
 import { YargsInstance } from "https://deno.land/x/yargs@v17.3.1-deno/build/lib/yargs-factory.js"
-
+import slug from "https://esm.sh/slug@5.2.0"
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {}
 
@@ -43,17 +47,18 @@ export function tank(spec: Actions) {
       macro?: string[];
     },
   ) {
+    slug.charmap["-"] = "_"
     if (_not_empty(html)) {
-      html?.forEach((block) => create_html_block(block))
+      html?.forEach((blockname) => create_html_block(slug(blockname, "_")))
     }
     if (_not_empty(data)) {
-      data?.forEach((block) => create_data_block(block))
+      data?.forEach((blockname) => create_data_block(slug(blockname, "_")))
     }
     if (_not_empty(api)) {
-      api?.forEach((block) => create_api_block(block))
+      api?.forEach((blockname) => create_api_block(slug(blockname, "_")))
     }
     if (_not_empty(macro)) {
-      macro?.forEach((block) => create_macro_block(block))
+      macro?.forEach((blockname) => create_macro_block(slug(blockname, "_")))
     }
   }
 
@@ -375,9 +380,12 @@ const html_opt = {
 
 const GENERATOR = {
   command: "<g>",
-  describe: "Generate component. [--html, --data, --api --macro]",
-  builder: (cli: YargsInstance) =>
-    cli.options(html_opt).check(validate_html_blocks),
+  describe: `Generate component. [${
+    brightCyan(
+      "--html sidebar footer, --data features, --api anime --macro title",
+    )
+  }]`,
+  builder: (cli: YargsInstance) => cli.options(html_opt).check(block_validator),
   handler: tank(actions).generate_handler,
   example: ["tank g --html sidebar footer --data features --api events"],
 }
@@ -407,23 +415,32 @@ function _npm_install_for_windows(
 }
 
 // eslint-disable-next-line max-lines-per-function
-function validate_html_blocks(
-  { h, d, a }: { h: string[]; d: string[]; a: string[] },
+function block_validator(
+  { h, d, a, m }: { h: string[]; d: string[]; a: string[]; m: string[] },
 ): true {
-  if (Array.isArray(h) && h.length === 0) {
-    actions.stdOut("HTML component name required.")
+  if (_not_empty_option(h)) {
+    throw new Error(brightRed("HTML component name required."))
   }
 
   // TODO: e2e test
-  if (Array.isArray(d) && d.length === 0) {
-    actions.stdOut("Data component name required.")
+  if (_not_empty_option(d)) {
+    throw new Error(brightRed("Data component name required."))
   }
 
   // TODO: e2e test
-  if (Array.isArray(a) && a.length === 0) {
-    actions.stdOut("API component name required.")
+  if (_not_empty_option(a)) {
+    throw new Error(brightRed("API component name required."))
+  }
+
+  // TODO: e2e test
+  if (_not_empty_option(m)) {
+    throw new Error(brightRed("Macro component name required."))
   }
   return true
+}
+
+function _not_empty_option(h: string[]) {
+  return Array.isArray(h) && h.length === 0
 }
 
 function selected(): options {
@@ -448,6 +465,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.6.0.2")
+    .version("0.6.0.4")
     .parse()
 }

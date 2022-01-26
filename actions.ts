@@ -15,7 +15,6 @@ import {
 import { WalkEntry, walkSync } from "https://deno.land/std@0.122.0/fs/mod.ts"
 import {
   bgBlack,
-  bgBrightBlack,
   brightGreen,
   brightMagenta,
   brightRed,
@@ -46,7 +45,7 @@ export const actions: Actions = (function () {
   ) {
     for (const dir of directories) {
       mkdir_p(_full_path(dir, name))
-      stdOut(_full_path(dir, name) + " Created folder.")
+      stdOut(_full_path(dir, name) + brightGreen(" Created folder.") + "\n")
     }
   }
 
@@ -118,16 +117,15 @@ export const actions: Actions = (function () {
 
 function _insert(filename: string, content: string) {
   // todo: e2e for extra line
-  path.parse(filename).ext == "html"
-    ? _insert_html(filename, content + "\n")
-    : _insert_text(filename, content + "\n")
+  path.parse(filename).ext == ".html"
+    ? _insert_html("index.html", content + "\n")
+    : _insert_into_styles("styles.css", content + "\n")
 }
 
 function _filtered_files(files: FilesList[]) {
   const created_files: FilesList[] = []
 
   for (const entry of walkSync(".", { maxDepth: 1 })) {
-    console.log("walked", entry.path)
     _filter_files({ entry, files, created_files })
   }
 
@@ -154,13 +152,15 @@ function _filter_files(
 
 function _insert_html(main_html: string, block: string) {
   const page = Deno.readTextFileSync(main_html)
+
   const dom = new DOMParser().parseFromString(
     page,
     "text/html",
   )
   const body = dom?.querySelector("body")
+
   if (!dom || !body || !dom.documentElement) return
-  _insert_block_in_index({ body, dom, block })
+  _insert_into_index({ body, dom, block })
 }
 
 type InsertBlock = {
@@ -170,7 +170,7 @@ type InsertBlock = {
 };
 
 // eslint-disable-next-line max-lines-per-function
-function _insert_block_in_index(spec: InsertBlock) {
+function _insert_into_index(spec: InsertBlock) {
   try {
     spec.body.insertBefore(
       spec.dom.createTextNode("\n    " + spec.block),
@@ -236,10 +236,14 @@ function _insert_to_file(file_data: string, full_path: string) {
   })
 }
 
-function _text_encode(s: string) {
-  return new TextEncoder().encode(s)
-}
+// function _text_encode(s: string) {
+//   return new TextEncoder().encode(s)
+// }
 
-function _insert_text(filename: string, data: string) {
+function _insert_into_styles(filename: string, data: string) {
+  // todo: e2e do not insert if setup exist
+  for (const entry of walkSync(".", { maxDepth: 1 })) {
+    if (["tailwind.config.js"].includes(entry.path)) return
+  }
   _insert_to_file(data, filename)
 }

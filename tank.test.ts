@@ -173,9 +173,9 @@ Deno.test("tank can create an api block", () => {
 })
 
 Deno.test("tank can create a macro block", () => {
-  tank(mock).generate_handler({ macro: ["fancy-title"] })
+  tank(mock).generate_handler({ macro: ["title"] })
   const call = 0
-  const name = "fancy-title"
+  const name = "title"
   try {
     assertEquals(mock._create_dir({ call }).args, "blocks")
 
@@ -199,6 +199,32 @@ Deno.test("tank can create a macro block", () => {
         {{ ${name}_green("Macro blocks") }}
     </section>`,
     })
+  } finally {
+    mock.restore()
+  }
+})
+
+Deno.test("tank can slug fancy block names", () => {
+  try {
+    tank(mock).generate_handler({ macro: ["fancy-title"] })
+    let file = mock._create_file({ call: 0 }).args[0]
+    assertEquals(file, "blocks/fancy_title.macro.html")
+    mock.restore()
+
+    tank(mock).generate_handler({ api: ["fancy]title"] })
+    file = mock._create_file({ call: 0 }).args[0]
+    assertEquals(file, "blocks/fancytitle.html")
+    mock.restore()
+
+    tank(mock).generate_handler({ data: ["fancy///title"] })
+    file = mock._create_file({ call: 0 }).args[0]
+    assertEquals(file, "blocks/fancytitle.html")
+    mock.restore()
+
+    tank(mock).generate_handler({ html: ["FANCY=title%"] })
+    file = mock._create_file({ call: 0 }).args[0]
+    assertEquals(file, "blocks/fancytitle.html")
+    mock.restore()
   } finally {
     mock.restore()
   }
