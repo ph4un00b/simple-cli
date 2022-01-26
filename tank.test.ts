@@ -87,9 +87,7 @@ Deno.test("tank can create a html block", () => {
     assertEquals(file, "blocks/sidebar.html")
     assertEquals(content, "<h1>sidebar</h1>")
 
-    const [name, index] = mock._append_block({ call: 0 }).args
-    assertEquals(name, "sidebar")
-    assertEquals(index, "index.html")
+    assertAppend({ call: 0, html: "{% include \"blocks/sidebar.html\" %}" })
   } finally {
     mock.restore()
   }
@@ -132,15 +130,11 @@ Deno.test("tank can create multiple data blocks at once", () => {
   try {
     assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
     assertDataBlock({ call: 0, name: "list1" })
-    const [name_block, index] = mock._append_block({ call: 0 }).args
-    assertEquals(name_block, "list1")
-    assertEquals(index, "index.html")
+    assertAppend({ call: 0, html: "{% include \"blocks/list1.html\" %}" })
 
     assertEquals(mock._create_dir({ call: 1 }).args, "blocks")
     assertDataBlock({ call: 2, name: "sections" })
-    const [name_block2, index2] = mock._append_block({ call: 1 }).args
-    assertEquals(name_block2, "sections")
-    assertEquals(index2, "index.html")
+    assertAppend({ call: 1, html: "{% include \"blocks/sections.html\" %}" })
   } finally {
     mock.restore()
   }
@@ -153,17 +147,53 @@ Deno.test("tank can create an api block", () => {
   try {
     assertEquals(mock._create_dir({ call }).args, "blocks")
 
-    assertApiBlock({call, name})
+    assertApiBlock({ call, name })
 
-    const [name_block, index] = mock._append_block({ call }).args
-    assertEquals(name_block, name)
-    assertEquals(index, "index.html")
+    assertAppend({ call, html: "{% include \"blocks/events.html\" %}" })
   } finally {
     mock.restore()
   }
 })
 
-function assertApiBlock({call, name}:{call: number, name: string}) {
+Deno.test("tank can create a macro block", () => {
+  tank(mock).generate_handler({ macro: ["fancy-title"] })
+  const call = 0
+  const name = "fancy-title"
+  try {
+    assertEquals(mock._create_dir({ call }).args, "blocks")
+
+    const [file, content] = mock._create_file({ call }).args
+    assertEquals(
+      file,
+      `blocks/${name}.macro.html`,
+      `${name}.macro.html not created.`,
+    )
+    assert(content.split("\n").includes(""), content)
+
+    assertAppend({
+      call,
+      html:
+        `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
+
+    <section
+        class="flex flex-col-reverse items-center space-y-2 font-bold transition duration-500 bg-gray-900 cursor-move hover:bg-violet-600 space">
+        {{ ${name}("reuse me!", "capitalize") }}
+        😁
+        {{ ${name}_green("Macro blocks") }}
+    </section>`,
+    })
+  } finally {
+    mock.restore()
+  }
+})
+
+function assertAppend({ call, html }: { call: number; html: string }) {
+  const [name, index] = mock._append_block({ call }).args
+  assertEquals(name, html)
+  assertEquals(index, "index.html")
+}
+
+function assertApiBlock({ call, name }: { call: number; name: string }) {
   const [file, content] = mock._create_file({ call }).args
   assertEquals(file, `blocks/${name}.html`, `${name}.html not created.`)
   assert(content.split("\n").includes(`    ${name} api block`), content)
@@ -172,26 +202,26 @@ function assertApiBlock({call, name}:{call: number, name: string}) {
   assertEquals(
     file2,
     `blocks/${name}.api.dev.js`,
-    `${name}.api.dev.js not created.`
+    `${name}.api.dev.js not created.`,
   )
   assert(
     content2.split("\n").includes(
-      "    \"https://animechan.vercel.app/api/quotes/anime?title=zero+kara\","
+      "    \"https://animechan.vercel.app/api/quotes/anime?title=zero+kara\",",
     ),
-    content2
+    content2,
   )
 
   const [file3, content3] = mock._create_file({ call: call + 2 }).args
   assert(
     content3.split("\n").includes(
-      "    \"https://animechan.vercel.app/api/quotes/anime?title=saint+seiya\","
+      "    \"https://animechan.vercel.app/api/quotes/anime?title=saint+seiya\",",
     ),
-    content3
+    content3,
   )
   assertEquals(
     file3,
     `blocks/${name}.api.prod.js`,
-    `${name}.api.prod.js not created.`
+    `${name}.api.prod.js not created.`,
   )
 }
 
@@ -225,11 +255,7 @@ function assertHTMLBlock({ call, name }: { call: number; name: string }) {
   assertEquals(file, `blocks/${name}.html`)
   assert(content.split("\n").includes(`<h1>${name}</h1>`))
 
-  const [name_block, index] = mock._append_block({
-    call,
-  }).args
-  assertEquals(name_block, name)
-  assertEquals(index, "index.html")
+  assertAppend({ call, html: "{% include \"blocks/" + name + ".html\" %}" })
 }
 
 function assertViteConfigs(

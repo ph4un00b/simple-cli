@@ -26,3 +26,5 @@ package-lock.json
 *.sln
 *.sw?
 *.exe
+
+index.html

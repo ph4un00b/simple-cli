@@ -56,7 +56,7 @@ export const actions: Actions = (function () {
 
   function create_file(full_path: string, content: string) {
     // TODO: e2e test dont overwrite
-    for (const entry of walkSync("blocks", { maxDepth: 1})) {
+    for (const entry of walkSync("blocks", { maxDepth: 1 })) {
       if (path.basename(full_path) === path.basename(entry.path)) {
         return stdOut("\n" + full_path + " Already Created file.")
       }
@@ -79,17 +79,16 @@ export const actions: Actions = (function () {
     Deno.removeSync(file)
   }
 
-  function append_block(name: string, main_html: string) {
-    const block = "{% include \"blocks/" + name + ".html" +
-      "\" %}"
+  function append_block(html: string, index_file: string) {
     try {
-      _append(main_html, block)
+      // todo: e2e for extra line
+      _append(index_file, html + "\n")
     } catch (e) {
-      stdOut(`\n\n${main_html} not found.\n`)
+      stdOut(`\n\n${index_file} not found.\n`)
     }
 
-    stdOut(`\nYou can include this code below on your main ${main_html}.`)
-    stdOut("\n\n" + block + "\n\n")
+    stdOut(`\nOr you can include this code below on your main ${index_file}.`)
+    stdOut("\n\n" + html + "\n\n")
   }
 
   function stdOut(text: string) {
@@ -111,7 +110,7 @@ export const actions: Actions = (function () {
 function _filtered_files(files: FilesList[]) {
   const created_files: FilesList[] = []
 
-  for (const entry of walkSync(".", {maxDepth: 1})) {
+  for (const entry of walkSync(".", { maxDepth: 1 })) {
     console.log("walked", entry.path)
     _filter_files({ entry, files, created_files })
   }
@@ -145,7 +144,7 @@ function _append(main_html: string, block: string) {
   )
   const body = dom?.querySelector("body")
   if (!dom || !body || !dom.documentElement) return
-  _insert_block({ body, dom, block })
+  _insert_block_in_index({ body, dom, block })
 }
 
 type InsertBlock = {
@@ -155,20 +154,43 @@ type InsertBlock = {
 };
 
 // eslint-disable-next-line max-lines-per-function
-function _insert_block(spec: InsertBlock) {
+function _insert_block_in_index(spec: InsertBlock) {
   try {
     spec.body.insertBefore(
       spec.dom.createTextNode("\n    " + spec.block),
       spec.body.childNodes[0],
     )
-    _write_file(
-      "<!DOCTYPE html>\n" +
-        spec.dom.documentElement?.outerHTML,
-      "index.html",
-    )
+
+    if (spec.dom.documentElement) {
+      const html = "<!DOCTYPE html>\n" + spec.dom.documentElement.outerHTML
+      // todo: e2e unescape
+      _write_file(_unescape(html), "index.html")
+    }
   } catch (error) {
     console.log(error)
   }
+}
+
+// eslint-disable-next-line max-lines-per-function
+function _unescape(string: string) {
+  // https://github.com/lodash/lodash/blob/master/unescape.js
+  const htmlUnescapes: { [key: string]: string } = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": "\"",
+    "&#39;": "'",
+  }
+
+  const reEscapedHtml = /&(?:amp|lt|gt|quot|#(0+)?39);/g
+  const reHasEscapedHtml = RegExp(reEscapedHtml.source)
+
+  return (string && reHasEscapedHtml.test(string))
+    ? string.replace(
+      reEscapedHtml,
+      (entity: string) => (htmlUnescapes[entity] || "'"),
+    )
+    : (string || "")
 }
 
 export type CreateFiles = {
@@ -186,9 +208,8 @@ function _full_path(key: any, name?: string): string {
 }
 
 function _write_file(file_data: string, full_path: string) {
-  Deno.writeFileSync(full_path, _text_encode(file_data), {
-    create: true,
-  })
+  Deno.writeTextFileSync(full_path, file_data, { create: true })
+  // Deno.writeFileSync(full_path, _text_encode(file_data), { create: true })
 }
 
 function _text_encode(s: string) {

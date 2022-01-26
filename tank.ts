@@ -36,23 +36,70 @@ export function tank(spec: Actions) {
 
   // eslint-disable-next-line max-lines-per-function
   function generate_handler(
-    { html, data, api }: { html?: string[]; data?: string[]; api?: string[] },
+    { html, data, api, macro }: {
+      html?: string[];
+      data?: string[];
+      api?: string[];
+      macro?: string[];
+    },
   ) {
-    if (html && html.length > 0) {
-      html.forEach((block) => create_html_block(block))
+    if (_not_empty(html)) {
+      html?.forEach((block) => create_html_block(block))
     }
-    if (data && data.length > 0) {
-      data.forEach((block) => create_data_block(block))
+    if (_not_empty(data)) {
+      data?.forEach((block) => create_data_block(block))
     }
-    if (api && api.length > 0) {
-      api.forEach((block) => create_api_block(block))
+    if (_not_empty(api)) {
+      api?.forEach((block) => create_api_block(block))
+    }
+    if (_not_empty(macro)) {
+      macro?.forEach((block) => create_macro_block(block))
     }
   }
 
   // eslint-disable-next-line max-lines-per-function
-  function create_api_block(name:string) {
+  function create_macro_block(name: string) {
     create_dir("blocks")
-    create_file(`blocks/${name}.html`, `<section class="bg-gray-900 text-zinc-100">
+    create_file(
+      `blocks/${name}.macro.html`,
+      `<!-- https://mozilla.github.io/nunjucks/templating.html#macro -->
+
+{% macro ${name}(text, transform = 'uppercase') %}
+
+<span class="text-3xl text-transparent {{transform}} bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">
+    {{ text }}
+</span>
+
+{% endmacro %}
+
+{% macro ${name}_green(text, transform = 'uppercase') %}
+
+<span class="text-3xl text-transparent {{transform}} bg-clip-text bg-gradient-to-r from-green-500 to-sky-500">
+    {{ text }}
+</span>
+
+{% endmacro %}`,
+    )
+
+    append_block(
+      `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
+
+    <section
+        class="flex flex-col-reverse items-center space-y-2 font-bold transition duration-500 bg-gray-900 cursor-move hover:bg-violet-600 space">
+        {{ ${name}("reuse me!", "capitalize") }}
+        😁
+        {{ ${name}_green("Macro blocks") }}
+    </section>`,
+      "index.html",
+    )
+  }
+
+  // eslint-disable-next-line max-lines-per-function
+  function create_api_block(name: string) {
+    create_dir("blocks")
+    create_file(
+      `blocks/${name}.html`,
+      `<section class="bg-gray-900 text-zinc-100">
     <span class="text-3xl text-transparent uppercase bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">
     ${name} api block
     </span>
@@ -79,8 +126,11 @@ export function tank(spec: Actions) {
         </article>
         {% endfor %}
     </section>
-</section>`)
-    create_file(`blocks/${name}.api.dev.js`, `// https://axios-http.com/docs/instance
+</section>`,
+    )
+    create_file(
+      `blocks/${name}.api.dev.js`,
+      `// https://axios-http.com/docs/instance
 const axios = require("axios").default;
 
 module.exports = async function () {
@@ -92,8 +142,11 @@ module.exports = async function () {
   if (json) return json.data.slice(0, 4);
   return "No data found.";
 };
-    `)
-    create_file(`blocks/${name}.api.prod.js`, `// https://axios-http.com/docs/instance
+    `,
+    )
+    create_file(
+      `blocks/${name}.api.prod.js`,
+      `// https://axios-http.com/docs/instance
 const axios = require("axios").default;
 
 module.exports = async function () {
@@ -104,9 +157,11 @@ module.exports = async function () {
 
   if (json) return json.data.slice(0, 4);
   return "No data found.";
-};
-    `)
-    append_block(name, "index.html")
+};`,
+    )
+
+    const block = "{% include \"blocks/" + name + ".html" + "\" %}"
+    append_block(block, "index.html")
   }
 
   async function vite_handler() {
@@ -126,7 +181,8 @@ module.exports = async function () {
   function create_html_block(name: string) {
     create_dir("blocks")
     create_file(`blocks/${name}.html`, `<h1>${name}</h1>`)
-    append_block(name, "index.html")
+    const block = "{% include \"blocks/" + name + ".html" + "\" %}"
+    append_block(block, "index.html")
   }
 
   // eslint-disable-next-line max-lines-per-function
@@ -174,7 +230,8 @@ module.exports = async function () {
         2,
       ),
     )
-    append_block(name, "index.html")
+    const block = "{% include \"blocks/" + name + ".html" + "\" %}"
+    append_block(block, "index.html")
   }
 
   //// pick from oak
@@ -190,6 +247,7 @@ module.exports = async function () {
   // }
 
   function listen(port: number) {
+    // TODO: simple server
     throw new Error("Implement SimpleServer. " + port)
   }
 
@@ -300,15 +358,26 @@ const html_opt = {
       "Create API block component. You need Vite configs in order to run it!",
     type: "array",
   },
+  "m": {
+    alias: "macro",
+    describe:
+      "Create macro block component. You need Vite configs in order to run it!",
+    type: "array",
+  },
 }
 
 const GENERATOR = {
   command: "<g>",
-  describe: "Generate component. [--html, --data, --api]",
+  describe: "Generate component. [--html, --data, --api --macro]",
   builder: (cli: YargsInstance) =>
     cli.options(html_opt).check(validate_html_blocks),
   handler: tank(actions).generate_handler,
   example: ["tank g --html sidebar footer --data features --api events"],
+}
+
+function _not_empty(block: string[] | undefined) {
+  if (!block) return false
+  return block.length > 0
 }
 
 // eslint-disable-next-line max-lines-per-function
@@ -372,6 +441,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.5.0.2")
+    .version("0.6.0.2")
     .parse()
 }
