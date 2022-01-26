@@ -40,6 +40,14 @@ Deno.test("tank can create an unfancy blog on Windows", async () => {
 
     assertViteConfigs({ folder: "test", call: 1 })
 
+    assertAppend({
+      file: "styles.css",
+      call: 0,
+      html: `@tailwind base;
+@tailwind components;
+@tailwind utilities;`,
+    })
+
     assertEquals(mock.executed({ call: 0 }).args, [
       "cmd",
       "/c",
@@ -64,6 +72,15 @@ Deno.test(
 
     try {
       assertViteConfigs({ call: 0 })
+
+      assertAppend({
+        file: "styles.css",
+        call: 0,
+        html: `@tailwind base;
+@tailwind components;
+@tailwind utilities;`,
+      })
+
       assertEquals(mock.executed({ call: 0 }).args, [
         "cmd",
         "/c",
@@ -187,10 +204,16 @@ Deno.test("tank can create a macro block", () => {
   }
 })
 
-function assertAppend({ call, html }: { call: number; html: string }) {
-  const [name, index] = mock._append_block({ call }).args
+function assertAppend(
+  { call, html, file = "index.html" }: {
+    call: number;
+    html: string;
+    file?: string;
+  },
+) {
+  const [name, index] = mock._insert_content({ call }).args
   assertEquals(name, html)
-  assertEquals(index, "index.html")
+  assertEquals(index, file)
 }
 
 function assertApiBlock({ call, name }: { call: number; name: string }) {

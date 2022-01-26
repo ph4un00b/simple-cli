@@ -30,7 +30,7 @@ export function tank(spec: Actions) {
     create_directories,
     create_files,
     exec,
-    append_block,
+    insert_content,
     stdOut,
   } = spec
 
@@ -81,7 +81,7 @@ export function tank(spec: Actions) {
 {% endmacro %}`,
     )
 
-    append_block(
+    insert_content(
       `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
 
     <section
@@ -161,7 +161,7 @@ module.exports = async function () {
     )
 
     const block = "{% include \"blocks/" + name + ".html" + "\" %}"
-    append_block(block, "index.html")
+    insert_content(block, "index.html")
   }
 
   async function vite_handler() {
@@ -182,7 +182,7 @@ module.exports = async function () {
     create_dir("blocks")
     create_file(`blocks/${name}.html`, `<h1>${name}</h1>`)
     const block = "{% include \"blocks/" + name + ".html" + "\" %}"
-    append_block(block, "index.html")
+    insert_content(block, "index.html")
   }
 
   // eslint-disable-next-line max-lines-per-function
@@ -231,7 +231,7 @@ module.exports = async function () {
       ),
     )
     const block = "{% include \"blocks/" + name + ".html" + "\" %}"
-    append_block(block, "index.html")
+    insert_content(block, "index.html")
   }
 
   //// pick from oak
@@ -263,7 +263,14 @@ module.exports = async function () {
 
     create_directories(unfancy_directories, name)
     create_files({ files, name, contents })
+    insert_content(
+      `@tailwind base;
+@tailwind components;
+@tailwind utilities;`,
+      "styles.css",
+    )
     await exec(_npm_install_for_windows(name))
+
     name
       ? stdOut(`Try cd ${name} && ${green("npm run dev")}!`)
       : stdOut(`Try ${green("npm run dev")}!`)

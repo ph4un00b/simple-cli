@@ -6,7 +6,7 @@ export interface ActionsMock {
   executed: (a: Call) => { args: string[]; calls: string[][] };
   directories: (a: Call) => { args: string[]; calls: string[][] };
   _create_file: (a: Call) => { args: string[]; calls: string[][] };
-  _append_block: (a: Call) => { args: string[]; calls: string[][] };
+  _insert_content: (a: Call) => { args: string[]; calls: string[][] };
   files: (a: Call) => { args: CreateFiles; calls: CreateFiles[] };
   get_removals: (a: Call) => { args: string; calls: string[] };
   _create_dir: (a: Call) => { args: string; calls: string[] };
@@ -49,7 +49,7 @@ export const actionsMock: Actions & ActionsMock = (function () {
     remove: (args: string) => removals.push(args),
     create_file: (...args: string[]) => file.push(args),
     create_dir: (args: string) => dir.push(args),
-    append_block: (...args: string[]) => blocks.push(args),
+    insert_content: (...args: string[]) => blocks.push(args),
     stdOut: (args: string) => out.push(args),
   }
 
@@ -63,7 +63,7 @@ export const actionsMock: Actions & ActionsMock = (function () {
     _create_file: ({ call }: Call) => ({ args: file[call], calls: file }),
     get_removals: ({ call }: Call) => ({ args: removals[call], calls: removals }),
     _create_dir: ({ call }: Call) => ({ args: dir[call], calls: dir }),
-    _append_block: ({ call }: Call) => ({ args: blocks[call], calls: blocks }),
+    _insert_content: ({ call }: Call) => ({ args: blocks[call], calls: blocks }),
     logged: ({ call }: Call) => ({ args: out[call], calls: out }),
     exist: () => _is_file,
     vite_configs(bool: boolean) {

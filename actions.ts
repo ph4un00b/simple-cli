@@ -13,6 +13,13 @@ import {
 } from "./templates/blog.ts"
 
 import { WalkEntry, walkSync } from "https://deno.land/std@0.122.0/fs/mod.ts"
+import {
+  bgBlack,
+  bgBrightBlack,
+  brightGreen,
+  brightMagenta,
+  brightRed,
+} from "https://deno.land/std@0.121.0/fmt/colors.ts"
 
 export type Actions = {
   create_directories: (
@@ -24,7 +31,7 @@ export type Actions = {
   remove: (file: string) => void;
   create_file: (full_path: string, content: string) => void;
   create_dir: (name: string) => void;
-  append_block: (name: string, main_html: string) => void;
+  insert_content: (content: string, filename: string) => void;
   stdOut: (text: string) => void;
 };
 
@@ -79,16 +86,18 @@ export const actions: Actions = (function () {
     Deno.removeSync(file)
   }
 
-  function append_block(html: string, index_file: string) {
+  function insert_content(content: string, filename: string) {
     try {
-      // todo: e2e for extra line
-      _append(index_file, html + "\n")
+      _insert(filename, content)
     } catch (e) {
-      stdOut(`\n\n${index_file} not found.\n`)
+      stdOut(brightRed(`\n\n${filename} not found.\n`))
     }
 
-    stdOut(`\nOr you can include this code below on your main ${index_file}.`)
-    stdOut("\n\n" + html + "\n\n")
+    // todo: e2e colors
+    stdOut(
+      `\nOr you can include this code below on your ${brightGreen(filename)}.`,
+    )
+    stdOut(bgBlack(brightMagenta("\n\n" + content + "\n\n")))
   }
 
   function stdOut(text: string) {
@@ -102,10 +111,17 @@ export const actions: Actions = (function () {
     remove,
     create_file,
     create_dir,
-    append_block,
+    insert_content,
     stdOut,
   }
 })()
+
+function _insert(filename: string, content: string) {
+  // todo: e2e for extra line
+  path.parse(filename).ext == "html"
+    ? _insert_html(filename, content + "\n")
+    : _insert_text(filename, content + "\n")
+}
 
 function _filtered_files(files: FilesList[]) {
   const created_files: FilesList[] = []
@@ -136,7 +152,7 @@ function _filter_files(
   }
 }
 
-function _append(main_html: string, block: string) {
+function _insert_html(main_html: string, block: string) {
   const page = Deno.readTextFileSync(main_html)
   const dom = new DOMParser().parseFromString(
     page,
@@ -212,6 +228,18 @@ function _write_file(file_data: string, full_path: string) {
   // Deno.writeFileSync(full_path, _text_encode(file_data), { create: true })
 }
 
+function _insert_to_file(file_data: string, full_path: string) {
+  // todo: e2e
+  const file_content = Deno.readTextFileSync(full_path)
+  Deno.writeTextFileSync(full_path, file_data + "\n" + file_content, {
+    create: true,
+  })
+}
+
 function _text_encode(s: string) {
   return new TextEncoder().encode(s)
+}
+
+function _insert_text(filename: string, data: string) {
+  _insert_to_file(data, filename)
 }

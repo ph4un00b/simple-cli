@@ -28,3 +28,4 @@ package-lock.json
 *.exe
 
 index.html
+styles.css
