@@ -43,7 +43,7 @@ Deno.test("tank can create an unfancy blog on Windows", async () => {
     assertAppend({
       file: "styles.css",
       call: 0,
-      html: `@tailwind base;
+      content: `@tailwind base;
 @tailwind components;
 @tailwind utilities;`,
     })
@@ -76,7 +76,7 @@ Deno.test(
       assertAppend({
         file: "styles.css",
         call: 0,
-        html: `@tailwind base;
+        content: `@tailwind base;
 @tailwind components;
 @tailwind utilities;`,
       })
@@ -104,7 +104,7 @@ Deno.test("tank can create a html block", () => {
     assertEquals(file, "blocks/sidebar.html")
     assertEquals(content, "<h1>sidebar</h1>")
 
-    assertAppend({ call: 0, html: "{% include \"blocks/sidebar.html\" %}" })
+    assertAppend({ call: 0, content: "{% include \"blocks/sidebar.html\" %}" })
   } finally {
     mock.restore()
   }
@@ -147,11 +147,11 @@ Deno.test("tank can create multiple data blocks at once", () => {
   try {
     assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
     assertDataBlock({ call: 0, name: "list1" })
-    assertAppend({ call: 0, html: "{% include \"blocks/list1.html\" %}" })
+    assertAppend({ call: 0, content: "{% include \"blocks/list1.html\" %}" })
 
     assertEquals(mock._create_dir({ call: 1 }).args, "blocks")
     assertDataBlock({ call: 2, name: "sections" })
-    assertAppend({ call: 1, html: "{% include \"blocks/sections.html\" %}" })
+    assertAppend({ call: 1, content: "{% include \"blocks/sections.html\" %}" })
   } finally {
     mock.restore()
   }
@@ -166,7 +166,7 @@ Deno.test("tank can create an api block", () => {
 
     assertApiBlock({ call, name })
 
-    assertAppend({ call, html: "{% include \"blocks/events.html\" %}" })
+    assertAppend({ call, content: "{% include \"blocks/events.html\" %}" })
   } finally {
     mock.restore()
   }
@@ -189,7 +189,7 @@ Deno.test("tank can create a macro block", () => {
 
     assertAppend({
       call,
-      html:
+      content:
         `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
 
     <section
@@ -205,14 +205,14 @@ Deno.test("tank can create a macro block", () => {
 })
 
 function assertAppend(
-  { call, html, file = "index.html" }: {
+  { call, content, file = "index.html" }: {
     call: number;
-    html: string;
+    content: string;
     file?: string;
   },
 ) {
   const [name, index] = mock._insert_content({ call }).args
-  assertEquals(name, html)
+  assertEquals(name, content)
   assertEquals(index, file)
 }
 
@@ -278,7 +278,7 @@ function assertHTMLBlock({ call, name }: { call: number; name: string }) {
   assertEquals(file, `blocks/${name}.html`)
   assert(content.split("\n").includes(`<h1>${name}</h1>`))
 
-  assertAppend({ call, html: "{% include \"blocks/" + name + ".html\" %}" })
+  assertAppend({ call, content: "{% include \"blocks/" + name + ".html\" %}" })
 }
 
 function assertViteConfigs(
