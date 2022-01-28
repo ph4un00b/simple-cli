@@ -31,4 +31,7 @@ index.html
 styles.css
 main.js
 blocks
-__tank__
+__tank__/
+public/
+images/
+*.config.js

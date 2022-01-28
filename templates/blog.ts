@@ -1,7 +1,8 @@
 const TANK = {
   default_file: "__tank__/defaults.js",
   nunjucks_file: "__tank__/nunjucks.plugin.js",
-  plugins_file: "__tank__/plugins.js"
+  plugins_file: "__tank__/plugins.js",
+  pages_file: "__tank__/pages.js",
 }
 
 export type FancyFilesList = {
@@ -53,19 +54,19 @@ export type FileContents = {
 
 type Templates = {
   "no-bullshit": {
-    directories: string[];
-    unfancy_directories: string[];
+    directories: Array<"images">;
+    unfancy_directories: Array<"public" | "__tank__">;
     files: Array<"index.html" | "styles.css" | ".gitignore">;
     unfancy_files: Array<
-      | "main.js"
-      | "postcss.config.js"
       | "package.json"
       | "vite.config.js"
       | "tailwind.config.js"
+      | "postcss.config.js"
+      | "main.js"
       | "__tank__/defaults.js"
-      | "__tank__/nunjucks.vite.js"
-      | "__tank__/vite.js"
-      | string
+      | "__tank__/nunjucks.plugin.js"
+      | "__tank__/plugins.js"
+      | "__tank__/pages.js"
     >;
     file_contents: FileContents;
   };
@@ -81,11 +82,48 @@ export const templates: Templates = {
       "tailwind.config.js",
       "postcss.config.js",
       "main.js",
-      TANK.default_file,
-      TANK.nunjucks_file,
-      TANK.plugins_file,
+      "__tank__/defaults.js",
+      "__tank__/nunjucks.plugin.js",
+      "__tank__/plugins.js",
+      "__tank__/pages.js",
     ],
     file_contents: {
+      [TANK.pages_file]: `const { resolve, parse } = require("path");
+const glob = require("tiny-glob");
+const slug = require("slug");
+
+slug.charmap["-"] = "-";
+slug.charmap["/"] = "-";
+slug.charmap["\\\\"] = "-";
+
+module.exports = async function () {
+  return {
+    resolvedPages: await pages(
+      "!(node_modules|blocks|public|dist)/**/index.html"
+    ),
+  };
+};
+
+async function pages(pattern) {
+  const glob_pages = await _pages(pattern);
+  return glob_pages.reduce(_format, _default());
+}
+
+function _format(pages, page) {
+  return { ...pages, [slug(parse(page).dir)]: resolve(page) };
+}
+
+async function _pages(pattern) {
+  return await glob(pattern, { filesOnly: true });
+}
+
+function _default() {
+  return { __main: _main_full_path() };
+}
+
+function _main_full_path() {
+  return resolve(__dirname, "../index.html");
+}`,
       [TANK.default_file]: `module.exports = {
   blocks: {
     dirname: "blocks",
@@ -98,11 +136,12 @@ export const templates: Templates = {
 };`,
       [TANK.plugins_file]: `const nunjucks = require("./nunjucks.plugin");
 
-module.exports = async function () {
+module.exports = async function (mode) {
   const { dev, prod } = await nunjucks();
-  return { dev, prod };
+  return mode === "production" ? [prod.NunjucksPlugin] : [dev.NunjucksPlugin];
 };`,
-      [TANK.nunjucks_file]: `const _nunjucks = require("vite-plugin-nunjucks").default;
+      [TANK.nunjucks_file]:
+        `const _nunjucks = require("vite-plugin-nunjucks").default;
 const _TANK_ = require("./defaults.js");
 const _parse = require("path").parse;
 const _glob = require("tiny-glob");
@@ -180,55 +219,51 @@ function _api_name(path) {
   "scripts": {
     "dev": "vite",
     "build": "vite build --mode staging",
-    "build-prod": "vite build --mode production",
+    "prod": "vite build --mode production",
     "preview": "vite preview"
   },
   "devDependencies": {
     "autoprefixer": "10.4.0",
     "axios": "0.25.0",
     "postcss": "8.4",
+    "slug": "5.2.0",
     "tailwindcss": "3.0.15",
     "tiny-glob": "0.2.9",
     "vite": "2.7.13",
     "vite-plugin-nunjucks": "0.1.10"
   }
-}
-        `,
+}`,
       "vite.config.js": `import { defineConfig } from "vite";
 import plugins from "./__tank__/plugins";
+import pages from "./__tank__/pages";
 
 export default defineConfig(async ({ mode }) => {
-  const { dev, prod } = await plugins();
+  const [TankPlugins] = await plugins(mode);
+  const { resolvedPages } = await pages();
 
   /**
    * @type {import('vite').UserConfig}
    */
   const viteConfigs = {
-    plugins: [...TankPlugins(mode, prod, dev)],
+    plugins: [...TankPlugins],
     build: {
-      rollupOptions: {
-        output: {
-          manualChunks: null,
-        },
-      },
+      rollupOptions: { input: resolvedPages },
     },
   };
 
   return viteConfigs;
-});
-
-function TankPlugins(mode, prod, dev) {
-  return mode === "production" ? prod.NunjucksPlugin : dev.NunjucksPlugin;
-}
-
-        `,
-      "tailwind.config.js": `module.exports = {
-    content: ["./index.html", "./**/*.js"],
-    darkMode: "class",
-    plugins: [],
-  };
-
-        `,
+});`,
+      "tailwind.config.js":
+        `/** @type {import("@types/tailwindcss/tailwind-config").TailwindConfig } */
+module.exports = {
+  content: [
+    "./index.html",
+    "./blocks/*.html",
+    "!(node_modules|blocks|public|dist)/**/*.html",
+  ],
+  darkMode: "class",
+  plugins: [],
+};`,
       "postcss.config.js": `module.exports = {
     plugins: {
       tailwindcss: {},
@@ -389,6 +424,7 @@ function TankPlugins(mode, prod, dev) {
                   atque totam distinctio enim magnam pariatur non!</p>
           </section>
       </article>
+      <script type="module" src="./main.js"></script>
   </body>
   </html>
           `,

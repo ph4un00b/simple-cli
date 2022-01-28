@@ -59,7 +59,7 @@ Deno.test("tank can create an unfancy blog on Windows", async () => {
       "npm",
       "install",
     ])
-    assertOutput("Try cd test && \x1b[32mnpm run dev\x1b[39m!")
+    assertOutput("\nTry your fancy project: \x1b[92mcd test\x1b[39m!\n")
   } finally {
     mock.restore()
   }
@@ -87,11 +87,11 @@ Deno.test(
         "npm",
         "install",
       ])
-      assertOutput("Try \x1b[32mnpm run dev\x1b[39m!")
+      assertOutput("\nTry \x1b[92mnpm run dev\x1b[39m!\n")
     } finally {
       mock.restore()
     }
-  },
+  }
 )
 
 Deno.test("tank can create a html block", () => {
@@ -100,9 +100,11 @@ Deno.test("tank can create a html block", () => {
   try {
     assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
 
-    const [file, content] = mock._create_file({ call: 0 }).args
-    assertEquals(file, "blocks/sidebar.html")
-    assertEquals(content, "<h1>sidebar</h1>")
+    assertBlockFile({
+      call: 0,
+      file: "blocks/sidebar.html",
+      content: "<h1>sidebar</h1>",
+    })
 
     assertAppend({ call: 0, content: "{% include \"blocks/sidebar.html\" %}" })
   } finally {
@@ -129,13 +131,12 @@ Deno.test("tank can create a data block", () => {
 
   try {
     assertDataBlock({ call: 0, name: "list" })
-
-    const [file, content] = mock._create_file({ call: 1 }).args
-    assertEquals(file, "blocks/list.data.json")
-    assertEquals(
-      content,
-      "[\n  {\n    \"title\": \"a nice list\",\n    \"content\": \"a cool content for list\"\n  },\n  {\n    \"title\": \"second title\",\n    \"content\": \"more content for list\"\n  }\n]",
-    )
+    assertBlockFile({
+      call: 1,
+      file: "blocks/list.data.json",
+      content:
+        "[\n  {\n    \"title\": \"a nice list\",\n    \"content\": \"a cool content for list\"\n  },\n  {\n    \"title\": \"second title\",\n    \"content\": \"more content for list\"\n  }\n]",
+    })
   } finally {
     mock.restore()
   }
@@ -179,18 +180,31 @@ Deno.test("tank can create a macro block", () => {
   try {
     assertEquals(mock._create_dir({ call }).args, "blocks")
 
-    const [file, content] = mock._create_file({ call }).args
-    assertEquals(
-      file,
-      `blocks/${name}.macro.html`,
-      `${name}.macro.html not created.`,
-    )
-    assert(content.split("\n").includes(""), content)
+    assertBlockFile({
+      call,
+      file: "blocks/title.macro.html",
+      content: `<!-- https://mozilla.github.io/nunjucks/templating.html#macro -->
+
+{% macro title(text, transform = 'uppercase') %}
+
+<span class="text-3xl text-transparent {{transform}} bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">
+    {{ text }}
+</span>
+
+{% endmacro %}
+
+{% macro title_green(text, transform = 'uppercase') %}
+
+<span class="text-3xl text-transparent {{transform}} bg-clip-text bg-gradient-to-r from-green-500 to-sky-500">
+    {{ text }}
+</span>
+
+{% endmacro %}`,
+    })
 
     assertAppend({
       call,
-      content:
-        `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
+      content: `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
 
     <section
         class="flex flex-col-reverse items-center space-y-2 font-bold transition duration-500 bg-gray-900 cursor-move hover:bg-violet-600 space">
@@ -204,93 +218,247 @@ Deno.test("tank can create a macro block", () => {
   }
 })
 
-Deno.test("tank can slug fancy block names", () => {
+Deno.test("tank generator can slug fancy block names", () => {
   try {
     tank(mock).generate_handler({ macro: ["fancy-title"] })
-    let file = mock._create_file({ call: 0 }).args[0]
-    assertEquals(file, "blocks/fancy_title.macro.html")
+    assertEquals(
+      mock._create_block_file({ call: 0 }).args[0],
+      "blocks/fancy_title.macro.html"
+    )
     mock.restore()
 
     tank(mock).generate_handler({ api: ["fancy]title"] })
-    file = mock._create_file({ call: 0 }).args[0]
-    assertEquals(file, "blocks/fancytitle.html")
+    assertEquals(
+      mock._create_block_file({ call: 0 }).args[0],
+      "blocks/fancytitle.html"
+    )
     mock.restore()
 
     tank(mock).generate_handler({ data: ["fancy///title"] })
-    file = mock._create_file({ call: 0 }).args[0]
-    assertEquals(file, "blocks/fancytitle.html")
+    assertEquals(
+      mock._create_block_file({ call: 0 }).args[0],
+      "blocks/fancytitle.html"
+    )
     mock.restore()
 
     tank(mock).generate_handler({ html: ["FANCY=title%"] })
-    file = mock._create_file({ call: 0 }).args[0]
-    assertEquals(file, "blocks/fancytitle.html")
+    assertEquals(
+      mock._create_block_file({ call: 0 }).args[0],
+      "blocks/fancytitle.html"
+    )
     mock.restore()
   } finally {
     mock.restore()
   }
 })
 
-function assertAppend(
-  { call, content, file = "index.html" }: {
-    call: number;
-    content: string;
-    file?: string;
-  },
-) {
+Deno.test("tank can create a single page", () => {
+  tank(mock).pages_handler({ single: ["pricing"] })
+  try {
+    assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
+
+    assertEquals(mock._create_block_file({ call: 0 }).calls.length, 1)
+
+    assertEquals(mock._create_dir({ call: 1 }).args, "pricing")
+
+    assertPageFile({
+      call: 0,
+      file: "pricing/index.html",
+      content: `<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body class="text-5xl bg-gray-900 text-rose-400">
+    {% from "blocks/title.macro.html" import title_green %}
+
+    <main class="flex flex-col items-center justify-center w-screen h-screen">
+        Welcome to {{ title_green("pricing Page!") }}
+    </main>
+    <script type="module" src="./main.js"></script>
+</body>
+
+</html>`,
+    })
+
+    assertPageFile({
+      call: 1,
+      file: "pricing/main.js",
+      content: `import "./styles.css"
+
+console.log("pricing!!!")`,
+    })
+
+    assertPageFile({
+      call: 2,
+      file: "pricing/styles.css",
+      content: `@tailwind base;
+@tailwind components;
+@tailwind utilities;`,
+    })
+  } finally {
+    mock.restore()
+  }
+})
+
+Deno.test("tank can slug a page names", () => {
+  try {
+    tank(mock).pages_handler({ single: ["landing-page"] })
+    assertEquals(
+      mock._create_page_file({ call: 0 }).args[0],
+      "landing-page/index.html"
+    )
+    mock.restore()
+
+    tank(mock).pages_handler({ single: ["/-$-pricing-$-/"] })
+    assertEquals(
+      mock._create_page_file({ call: 0 }).args[0],
+      "pricing/index.html"
+    )
+    mock.restore()
+
+    tank(mock).pages_handler({ single: ["//eve///nts//"] })
+    assertEquals(
+      mock._create_page_file({ call: 0 }).args[0],
+      "events/index.html"
+    )
+    mock.restore()
+
+    tank(mock).pages_handler({ single: ["\\ev\\\\\\ents\\"] })
+    assertEquals(
+      mock._create_page_file({ call: 0 }).args[0],
+      "events/index.html"
+    )
+  } finally {
+    mock.restore()
+  }
+})
+
+Deno.test("tank can handle a page names with sub-directories", () => {
+  try {
+    tank(mock).pages_handler({ single: ["landing-page/my/subfolder/page"] })
+    assertEquals(
+      mock._create_page_file({ call: 0 }).args[0],
+      "landing-page/my/subfolder/page/index.html"
+    )
+  } finally {
+    mock.restore()
+  }
+})
+
+Deno.test("tank can handle a page names with Windows slashes \\", () => {
+  try {
+    tank(mock).pages_handler({ single: ["landing-page\\my\\subfolder\\page"] })
+    assertEquals(
+      mock._create_page_file({ call: 0 }).args[0],
+      "landing-page/my/subfolder/page/index.html"
+    )
+  } finally {
+    mock.restore()
+  }
+})
+
+function assertPageFile({
+  file,
+  call,
+  content,
+}: {
+  file: string;
+  call: number;
+  content: string;
+}) {
+  assertEquals(mock._create_page_file({ call }).args[0], file)
+  assertEquals(mock._create_page_file({ call }).args[1], content)
+}
+
+function assertBlockFile({
+  file,
+  call,
+  content,
+}: {
+  file: string;
+  call: number;
+  content: string;
+}) {
+  assertEquals(mock._create_block_file({ call }).args[0], file)
+  assertEquals(mock._create_block_file({ call }).args[1], content)
+}
+
+function assertAppend({
+  call,
+  content,
+  file = "index.html",
+}: {
+  call: number;
+  content: string;
+  file?: string;
+}) {
   const [name, index] = mock._insert_content({ call }).args
   assertEquals(name, content)
   assertEquals(index, file)
 }
 
 function assertApiBlock({ call, name }: { call: number; name: string }) {
-  const [file, content] = mock._create_file({ call }).args
+  const [file, content] = mock._create_block_file({ call }).args
   assertEquals(file, `blocks/${name}.html`, `${name}.html not created.`)
   assert(content.split("\n").includes(`    ${name} api block`), content)
 
-  const [file2, content2] = mock._create_file({ call: call + 1 }).args
+  const [file2, content2] = mock._create_block_file({ call: call + 1 }).args
   assertEquals(
     file2,
     `blocks/${name}.api.dev.js`,
-    `${name}.api.dev.js not created.`,
+    `${name}.api.dev.js not created.`
   )
   assert(
-    content2.split("\n").includes(
-      "    \"https://animechan.vercel.app/api/quotes/anime?title=zero+kara\",",
-    ),
-    content2,
+    content2
+      .split("\n")
+      .includes(
+        "    \"https://animechan.vercel.app/api/quotes/anime?title=zero+kara\","
+      ),
+    content2
   )
 
-  const [file3, content3] = mock._create_file({ call: call + 2 }).args
+  const [file3, content3] = mock._create_block_file({ call: call + 2 }).args
   assert(
-    content3.split("\n").includes(
-      "    \"https://animechan.vercel.app/api/quotes/anime?title=saint+seiya\",",
-    ),
-    content3,
+    content3
+      .split("\n")
+      .includes(
+        "    \"https://animechan.vercel.app/api/quotes/anime?title=saint+seiya\","
+      ),
+    content3
   )
   assertEquals(
     file3,
     `blocks/${name}.api.prod.js`,
-    `${name}.api.prod.js not created.`,
+    `${name}.api.prod.js not created.`
   )
 }
 
 function assertDataBlock({ call, name }: { call: number; name: string }) {
-  const [file, content] = mock._create_file({ call }).args
+  const [file, content] = mock._create_block_file({ call }).args
   assertEquals(file, `blocks/${name}.html`, `${name}.html not created.`)
   assert(content.split("\n").includes(`        ${name} block`), content)
 
-  const [file2, content2] = mock._create_file({ call: call + 1 }).args
+  const [file2, content2] = mock._create_block_file({ call: call + 1 }).args
   assertEquals(
     file2,
     `blocks/${name}.data.json`,
-    `${name}.data.json not created.`,
+    `${name}.data.json not created.`
   )
   assertEquals(
     content2,
-    "[\n  {\n    \"title\": \"a nice " + name +
-      "\",\n    \"content\": \"a cool content for " + name +
+    "[\n  {\n    \"title\": \"a nice " +
+      name +
+      "\",\n    \"content\": \"a cool content for " +
+      name +
       "\"\n  },\n  {\n    \"title\": \"second title\",\n    \"content\": \"more content for " +
-      name + "\"\n  }\n]",
+      name +
+      "\"\n  }\n]"
   )
 }
 
@@ -299,7 +467,7 @@ function assertOutput(text: string) {
 }
 
 function assertHTMLBlock({ call, name }: { call: number; name: string }) {
-  const [file, content] = mock._create_file({ call }).args
+  const [file, content] = mock._create_block_file({ call }).args
   assertEquals(mock._create_dir({ call }).args, "blocks")
   assertEquals(file, `blocks/${name}.html`)
   assert(content.split("\n").includes(`<h1>${name}</h1>`))
@@ -307,9 +475,13 @@ function assertHTMLBlock({ call, name }: { call: number; name: string }) {
   assertAppend({ call, content: "{% include \"blocks/" + name + ".html\" %}" })
 }
 
-function assertViteConfigs(
-  { folder, call }: { call: number; folder?: string },
-) {
+function assertViteConfigs({
+  folder,
+  call,
+}: {
+  call: number;
+  folder?: string;
+}) {
   assertEquals(mock.files({ call }).args.name, folder)
   assertEquals(mock.directories({ call }).args, ["public", "__tank__"])
   assertEquals(mock.files({ call }).args.files, [
@@ -321,5 +493,6 @@ function assertViteConfigs(
     "__tank__/defaults.js",
     "__tank__/nunjucks.plugin.js",
     "__tank__/plugins.js",
+    "__tank__/pages.js",
   ])
 }

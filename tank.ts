@@ -1,6 +1,7 @@
 import yargs from "https://deno.land/x/yargs/deno.ts"
 import {
   brightCyan,
+  brightGreen,
   brightRed,
   green,
 } from "https://deno.land/std@0.121.0/fmt/colors.ts"
@@ -30,7 +31,8 @@ type BlogContent = {
 export function tank(spec: Actions) {
   const {
     create_dir,
-    create_file,
+    create_block_file,
+    create_page_file,
     create_directories,
     create_files,
     exec,
@@ -38,6 +40,59 @@ export function tank(spec: Actions) {
     stdOut,
   } = spec
 
+  // eslint-disable-next-line max-lines-per-function
+  function pages_handler({ single }: { single: string[] }) {
+    if (_not_empty(single)) {
+
+      create_macro_block("title")
+      // eslint-disable-next-line max-lines-per-function
+      single.forEach((page_name) => {
+        slug.charmap["-"] = "-"
+        slug.charmap["/"] = "/"
+        slug.charmap["\\"] = "/"
+        page_name = slug(page_name, { remove: /^\/*|\/*$|[/*]{2,}/g })
+
+        create_dir(page_name)
+        create_page_file(
+          `${page_name}/index.html`,
+          `<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body class="text-5xl bg-gray-900 text-rose-400">
+    {% from "blocks/title.macro.html" import title_green %}
+
+    <main class="flex flex-col items-center justify-center w-screen h-screen">
+        Welcome to {{ title_green("${page_name} Page!") }}
+    </main>
+    <script type="module" src="./main.js"></script>
+</body>
+
+</html>`,
+        )
+
+        create_page_file(
+          `${page_name}/main.js`,
+          `import "./styles.css"
+
+console.log("${page_name}!!!")`,
+        )
+
+        create_page_file(
+          `${page_name}/styles.css`,
+          `@tailwind base;
+@tailwind components;
+@tailwind utilities;`,
+        )
+      })
+    }
+  }
   // eslint-disable-next-line max-lines-per-function
   function generate_handler(
     { html, data, api, macro }: {
@@ -65,7 +120,7 @@ export function tank(spec: Actions) {
   // eslint-disable-next-line max-lines-per-function
   function create_macro_block(name: string) {
     create_dir("blocks")
-    create_file(
+    create_block_file(
       `blocks/${name}.macro.html`,
       `<!-- https://mozilla.github.io/nunjucks/templating.html#macro -->
 
@@ -102,7 +157,7 @@ export function tank(spec: Actions) {
   // eslint-disable-next-line max-lines-per-function
   function create_api_block(name: string) {
     create_dir("blocks")
-    create_file(
+    create_block_file(
       `blocks/${name}.html`,
       `<section class="bg-gray-900 text-zinc-100">
     <span class="text-3xl text-transparent uppercase bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">
@@ -133,7 +188,7 @@ export function tank(spec: Actions) {
     </section>
 </section>`,
     )
-    create_file(
+    create_block_file(
       `blocks/${name}.api.dev.js`,
       `// https://axios-http.com/docs/instance
 const axios = require("axios").default;
@@ -149,7 +204,7 @@ module.exports = async function () {
 };
     `,
     )
-    create_file(
+    create_block_file(
       `blocks/${name}.api.prod.js`,
       `// https://axios-http.com/docs/instance
 const axios = require("axios").default;
@@ -185,7 +240,7 @@ module.exports = async function () {
 
   function create_html_block(name: string) {
     create_dir("blocks")
-    create_file(`blocks/${name}.html`, `<h1>${name}</h1>`)
+    create_block_file(`blocks/${name}.html`, `<h1>${name}</h1>`)
     const block = "{% include \"blocks/" + name + ".html" + "\" %}"
     insert_content(block, "index.html")
   }
@@ -193,7 +248,7 @@ module.exports = async function () {
   // eslint-disable-next-line max-lines-per-function
   function create_data_block(name: string) {
     create_dir("blocks")
-    create_file(
+    create_block_file(
       `blocks/${name}.html`,
       `<article class="flex flex-col items-center antialiased bg-rose-500 text-gray-50">
       <h1 class="text-4xl font-extralight">
@@ -221,7 +276,7 @@ module.exports = async function () {
   </article>`,
     )
 
-    create_file(
+    create_block_file(
       `blocks/${name}.data.json`,
       JSON.stringify(
         [{
@@ -239,18 +294,6 @@ module.exports = async function () {
     insert_content(block, "index.html")
   }
 
-  //// pick from oak
-  // function stripEol(value: Uint8Array): Uint8Array {
-  //   if (value[value.byteLength - 1] == LF) {
-  //     let drop = 1
-  //     if (value.byteLength > 1 && value[value.byteLength - 2] === CR) {
-  //       drop = 2
-  //     }
-  //     return value.subarray(0, value.byteLength - drop)
-  //   }
-  //   return value
-  // }
-
   function listen(port: number) {
     // TODO: simple server
     throw new Error("Implement SimpleServer. " + port)
@@ -266,19 +309,21 @@ module.exports = async function () {
       file_contents: contents,
     } = templates[selected()]
 
-    create_directories(unfancy_directories, name)
-    create_files({ files, name, contents })
+    // todo e2e
     insert_content(
       `@tailwind base;
 @tailwind components;
 @tailwind utilities;`,
       "styles.css",
     )
+
+    create_directories(unfancy_directories, name)
+    create_files({ files, name, contents })
     await exec(_npm_install_for_windows(name))
 
     name
-      ? stdOut(`Try cd ${name} && ${green("npm run dev")}!`)
-      : stdOut(`Try ${green("npm run dev")}!`)
+      ? stdOut(`\nTry cd ${name} && ${brightGreen("npm run dev")}!\n`)
+      : stdOut(`\nTry ${brightGreen("npm run dev")}!\n`)
   }
 
   function create_blog(project: options, name: string) {
@@ -290,9 +335,11 @@ module.exports = async function () {
 
     create_directories(directories, name)
     create_files({ files, name, contents })
+    stdOut("\nTry your fancy project: " + brightGreen(`cd ${name}`) + "!\n")
   }
 
   return {
+    pages_handler,
     generate_handler,
     http_handler,
     vite_handler,
@@ -317,7 +364,6 @@ const HTTP = {
 
 const name_opt = {
   alias: "name",
-  // demandOption: true,
   describe: "Project name.",
   type: "string",
 }
@@ -325,29 +371,29 @@ const name_opt = {
 const bs_opt = {
   alias: "bs",
   default: false,
-  describe: "Adds postcss, tailwind, vite and npm configurations.",
+  describe: "Adds Vite + Tailwind configurations.",
   type: "boolean",
 }
 
 const BLOG = {
   command: "<blog>",
-  describe: "Create blog project.",
+  describe: "Creates a new project.",
   builder: (cli: YargsInstance) => cli.options({ "n": name_opt, "b": bs_opt }),
   handler: tank(actions).blog_handler,
   example: [
     "tank blog --name my-blog --no-bs",
-    "Create an unfancy blog project.",
+    "Creates an unfancy blog project.",
   ],
 }
 
 const VITE = {
   command: "<vite>",
-  describe: "Update project with unfancy stuff.",
+  describe: "Updates your project with Vite + Tailwind stuff.",
   builder: noop,
   handler: tank(actions).vite_handler,
   example: [
     "tank vite",
-    "Tailwind + Vite configurations for project.",
+    "Tailwind + Vite configurations for your project.",
   ],
 }
 
@@ -355,32 +401,32 @@ const html_opt = {
   "h": {
     alias: "html",
     describe:
-      "Create html block component. You need Vite config in order to run it!.",
+      "Creates an html block component. You need Vite config in order to run it!.",
     type: "array",
   },
   "d": {
     alias: "data",
     describe:
-      "Create data block component. You need Vite configs in order to run it!",
+      "Creates a data block component. You need Vite configs in order to run it!",
     type: "array",
   },
   "a": {
     alias: "api",
     describe:
-      "Create API block component. You need Vite configs in order to run it!",
+      "Creates an API block component. You need Vite configs in order to run it!",
     type: "array",
   },
   "m": {
     alias: "macro",
     describe:
-      "Create macro block component. You need Vite configs in order to run it!",
+      "Creates a macro block component. You need Vite configs in order to run it!",
     type: "array",
   },
 }
 
 const GENERATOR = {
   command: "<g>",
-  describe: `Generate component. [${
+  describe: `Generates a component. [${
     brightCyan(
       "--html sidebar footer, --data features, --api anime --macro title",
     )
@@ -388,6 +434,35 @@ const GENERATOR = {
   builder: (cli: YargsInstance) => cli.options(html_opt).check(block_validator),
   handler: tank(actions).generate_handler,
   example: ["tank g --html sidebar footer --data features --api events"],
+}
+
+const page_opt = {
+  "s": {
+    alias: "single",
+    describe:
+      "Creates a single page. You need Vite config in order to run it!.",
+    type: "array",
+  },
+}
+
+const PAGE = {
+  command: "<p>",
+  describe: `Generates new pages. [${
+    brightCyan(
+      "--single contact pricing login",
+    )
+  }]`,
+  builder: (cli: YargsInstance) =>
+    cli.options(page_opt).check(function ({ s }: { s: string[] }) {
+      // todo: e2e
+      if (_not_empty_option(s)) {
+        throw new Error(brightRed("Single page name required."))
+      }
+
+      return true
+    }),
+  handler: tank(actions).pages_handler,
+  example: ["tank p --single signup"],
 }
 
 function _not_empty(block: string[] | undefined) {
@@ -459,12 +534,13 @@ if (import.meta.main) {
     .command(BLOG).example(...BLOG.example)
     .command(VITE).example(...VITE.example)
     .command(GENERATOR).example(...GENERATOR.example)
+    .command(PAGE).example(...PAGE.example)
     .example([
       ["tank server-blocks --no-tests"],
       ["tank add --layouts", "Create layouts"],
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.6.0.4")
+    .version("0.7.0.8")
     .parse()
 }

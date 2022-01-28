@@ -28,7 +28,8 @@ export type Actions = {
   create_files: (spec: CreateFiles) => void;
   exec: (cmd: string[]) => Promise<void>;
   remove: (file: string) => void;
-  create_file: (full_path: string, content: string) => void;
+  create_block_file: (full_path: string, content: string) => void;
+  create_page_file: (filename: string, content: string) => void;
   create_dir: (name: string) => void;
   insert_content: (content: string, filename: string) => void;
   stdOut: (text: string) => void;
@@ -60,13 +61,26 @@ export const actions: Actions = (function () {
     }
   }
 
-  function create_file(full_path: string, content: string) {
+  function create_block_file(full_path: string, content: string) {
     // TODO: e2e test dont overwrite
     for (const entry of walkSync("blocks", { maxDepth: 1 })) {
       if (path.basename(full_path) === path.basename(entry.path)) {
-        return stdOut("\n" + full_path + " Already Created file.")
+        return stdOut("\n" + full_path + " " + brightMagenta("Already Created file."))
       }
     }
+    _write_file(content, full_path)
+    stdOut("\n" + full_path + " "+ brightGreen("Created file."))
+  }
+
+  function create_page_file(full_path: string, content: string) {
+    const folder = path.parse(full_path).dir
+    // TODO: e2e test dont overwrite
+    for (const entry of walkSync(folder, { maxDepth: 1 })) {
+      if (path.basename(full_path) === path.basename(entry.path)) {
+        return stdOut("\n" + full_path + " " + brightMagenta("Already Created file."))
+      }
+    }
+
     _write_file(content, full_path)
     stdOut("\n" + full_path + " Created file.")
   }
@@ -92,9 +106,9 @@ export const actions: Actions = (function () {
       stdOut(brightRed(`\n\n${filename} not found.\n`))
     }
 
-    // todo: e2e colors
+    // todo: e2e colors, output
     stdOut(
-      `\nOr you can include this code below on your ${brightGreen(filename)}.`,
+      `\nNew code for: ${brightGreen(filename)}.`,
     )
     stdOut(bgBlack(brightMagenta("\n\n" + content + "\n\n")))
   }
@@ -108,15 +122,16 @@ export const actions: Actions = (function () {
     create_files,
     exec,
     remove,
-    create_file,
+    create_block_file,
+    create_page_file,
     create_dir,
     insert_content,
     stdOut,
   }
 })()
 
+// todo: e2e for extra line
 function _insert(filename: string, content: string) {
-  // todo: e2e for extra line
   path.parse(filename).ext == ".html"
     ? _insert_html("index.html", content + "\n")
     : _insert_into_styles("styles.css", content + "\n")
@@ -150,16 +165,10 @@ function _filter_files(
   }
 }
 
-function _insert_html(main_html: string, block: string) {
-  const page = Deno.readTextFileSync(main_html)
+function _insert_html(filename: string, block: string) {
+  const { dom, body } = _get_html_elements(filename)
+  if (!dom || !body) return
 
-  const dom = new DOMParser().parseFromString(
-    page,
-    "text/html",
-  )
-  const body = dom?.querySelector("body")
-
-  if (!dom || !body || !dom.documentElement) return
   _insert_into_index({ body, dom, block })
 }
 
@@ -169,22 +178,35 @@ type InsertBlock = {
   block: string;
 };
 
-// eslint-disable-next-line max-lines-per-function
+function _get_html_elements(filename: string) {
+  const dom = new DOMParser().parseFromString(
+    Deno.readTextFileSync(filename),
+    "text/html",
+  )
+  const body = dom?.querySelector("body")
+  return { dom, body }
+}
+
 function _insert_into_index(spec: InsertBlock) {
   try {
-    spec.body.insertBefore(
-      spec.dom.createTextNode("\n    " + spec.block),
-      spec.body.childNodes[0],
-    )
-
-    if (spec.dom.documentElement) {
-      const html = "<!DOCTYPE html>\n" + spec.dom.documentElement.outerHTML
-      // todo: e2e unescape
-      _write_file(_unescape(html), "index.html")
-    }
+    if (!spec.dom.documentElement) return
+    _mutate_body_element(spec)
+    _overwrite_index("<!DOCTYPE html>\n" + spec.dom.documentElement.outerHTML)
   } catch (error) {
     console.log(error)
   }
+}
+
+// todo: e2e unescape
+function _overwrite_index(html: string) {
+  _write_file(_unescape(html), "index.html")
+}
+
+function _mutate_body_element(spec: InsertBlock) {
+  spec.body.insertBefore(
+    spec.dom.createTextNode("\n    " + spec.block),
+    spec.body.childNodes[0],
+  )
 }
 
 // eslint-disable-next-line max-lines-per-function
@@ -225,23 +247,18 @@ function _full_path(key: any, name?: string): string {
 
 function _write_file(file_data: string, full_path: string) {
   Deno.writeTextFileSync(full_path, file_data, { create: true })
-  // Deno.writeFileSync(full_path, _text_encode(file_data), { create: true })
 }
 
+// todo: e2e
 function _insert_to_file(file_data: string, full_path: string) {
-  // todo: e2e
   const file_content = Deno.readTextFileSync(full_path)
   Deno.writeTextFileSync(full_path, file_data + "\n" + file_content, {
     create: true,
   })
 }
 
-// function _text_encode(s: string) {
-//   return new TextEncoder().encode(s)
-// }
-
+// todo: e2e do not insert if setup exist
 function _insert_into_styles(filename: string, data: string) {
-  // todo: e2e do not insert if setup exist
   for (const entry of walkSync(".", { maxDepth: 1 })) {
     if (["tailwind.config.js"].includes(entry.path)) return
   }

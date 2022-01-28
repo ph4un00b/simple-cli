@@ -5,7 +5,8 @@ type Call = { call: number };
 export interface ActionsMock {
   executed: (a: Call) => { args: string[]; calls: string[][] };
   directories: (a: Call) => { args: string[]; calls: string[][] };
-  _create_file: (a: Call) => { args: string[]; calls: string[][] };
+  _create_block_file: (a: Call) => { args: string[]; calls: string[][] };
+  _create_page_file: (a: Call) => { args: string[]; calls: string[][] };
   _insert_content: (a: Call) => { args: string[]; calls: string[][] };
   files: (a: Call) => { args: CreateFiles; calls: CreateFiles[] };
   get_removals: (a: Call) => { args: string; calls: string[] };
@@ -20,7 +21,8 @@ export const actionsMock: Actions & ActionsMock = (function () {
   let directories: string[][] = []
   let files: CreateFiles[] = []
   let removals: string[] = []
-  let file: string[][] = []
+  let block_files: string[][] = []
+  let page_files: string[][] = []
   let _is_file = true
   let dir: string[] = []
   let blocks: string[][] = []
@@ -31,7 +33,8 @@ export const actionsMock: Actions & ActionsMock = (function () {
     files = []
     commands = []
     removals = []
-    file = []
+    block_files = []
+    page_files = []
     dir = []
     blocks = []
     out = []
@@ -47,7 +50,8 @@ export const actionsMock: Actions & ActionsMock = (function () {
       await commands.push(args)
     },
     remove: (args: string) => removals.push(args),
-    create_file: (...args: string[]) => file.push(args),
+    create_block_file: (...args: string[]) => block_files.push(args),
+    create_page_file: (...args: string[]) => page_files.push(args),
     create_dir: (args: string) => dir.push(args),
     insert_content: (...args: string[]) => blocks.push(args),
     stdOut: (args: string) => out.push(args),
@@ -60,7 +64,8 @@ export const actionsMock: Actions & ActionsMock = (function () {
       args: directories[call],
       calls: directories,
     }),
-    _create_file: ({ call }: Call) => ({ args: file[call], calls: file }),
+    _create_block_file: ({ call }: Call) => ({ args: block_files[call], calls: block_files }),
+    _create_page_file: ({ call }: Call) => ({ args: page_files[call], calls: page_files }),
     get_removals: ({ call }: Call) => ({ args: removals[call], calls: removals }),
     _create_dir: ({ call }: Call) => ({ args: dir[call], calls: dir }),
     _insert_content: ({ call }: Call) => ({ args: blocks[call], calls: blocks }),
