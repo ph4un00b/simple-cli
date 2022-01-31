@@ -379,6 +379,7 @@ export default async function* () {
 
   for (const page of api_data) {
     yield {
+      // do not clash with your macro names in the template!
       title: page.name,
       usd: page.price_usd,
       btc: page.price_btc,
@@ -404,9 +405,9 @@ export default async function* () {
 </head>
 
 <body>
-    {% from "title.macro.html" import title %}
+    {% from "pages_title.macro.html" import pages_title %}
 
-    <h1>{{ title(title) }}: {{ usd }} US / {{ btc }} BTC</h1>
+    <h1>{{ pages_title(title) }}: {{ usd }} US / {{ btc }} BTC</h1>
 
     <section>
         <div>market: {{ market }}</div>
@@ -537,7 +538,7 @@ export default function* ({ search, paginate }) {
     assertEquals(mock._create_dir({ call: 0 }).args, "blocks/layouts")
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
-      "blocks/title.macro.html",
+      "blocks/pages_title.macro.html",
     )
 
     assertPageFile({

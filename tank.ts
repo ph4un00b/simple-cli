@@ -44,8 +44,6 @@ export function tank(spec: Actions) {
   function pages_handler(
     { single, multiple }: { single?: string[]; multiple?: string[] },
   ) {
-
-    console.log(multiple)
     if (_not_empty(multiple)) {
       // eslint-disable-next-line max-lines-per-function
       multiple?.forEach((name) => {
@@ -61,6 +59,7 @@ export default async function* () {
 
   for (const page of api_data) {
     yield {
+      // do not clash with your macro names in the template!
       title: page.name,
       usd: page.price_usd,
       btc: page.price_btc,
@@ -86,9 +85,9 @@ export default async function* () {
 </head>
 
 <body>
-    {% from "title.macro.html" import title %}
+    {% from "pages_title.macro.html" import pages_title %}
 
-    <h1>{{ title(title) }}: {{ usd }} US / {{ btc }} BTC</h1>
+    <h1>{{ pages_title(title) }}: {{ usd }} US / {{ btc }} BTC</h1>
 
     <section>
         <div>market: {{ market }}</div>
@@ -212,7 +211,7 @@ export default function* ({ search, paginate }) {
         create_page_file(`${name}.pages.js`, pages_creator)
         create_dir("blocks/layouts")
         create_page_file(`blocks/layouts/${name}.pages.html`, pages_layout)
-        create_macro_block("title")
+        create_macro_block("pages_title")
         create_page_file(`${name}.paginator.pages.js`, paginator_file)
         create_page_file(
           "blocks/layouts/paginator.pages.html",
@@ -633,19 +632,21 @@ const PAGE = {
   command: "<p>",
   describe: "Generates new pages. [--single --multi]",
   builder: (cli: YargsInstance) =>
-    cli.options(page_opt).check(function ({ s, m }: { s: string[]; m: string[] }) {
-      // todo: e2e
-      if (_not_empty_option(s)) {
-        throw new Error(brightRed("Single page path name required."))
-      }
+    cli.options(page_opt).check(
+      function ({ s, m }: { s: string[]; m: string[] }) {
+        // todo: e2e
+        if (_not_empty_option(s)) {
+          throw new Error(brightRed("Single page path name required."))
+        }
 
-      // todo: e2e
-      if (_not_empty_option(m)) {
-        throw new Error(brightRed("Multiple page path name required."))
-      }
+        // todo: e2e
+        if (_not_empty_option(m)) {
+          throw new Error(brightRed("Multiple page path name required."))
+        }
 
-      return true
-    }),
+        return true
+      },
+    ),
   handler: tank(actions).pages_handler,
   example: ["tank p --single signup --multiple anime"],
 }
@@ -726,6 +727,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.0")
+    .version("0.8.0.1")
     .parse()
 }
