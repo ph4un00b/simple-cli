@@ -47,6 +47,11 @@ export function tank(spec: Actions) {
     if (_not_empty(multiple)) {
       // eslint-disable-next-line max-lines-per-function
       multiple?.forEach((name) => {
+
+        slug.charmap["/"] = "-"
+        slug.charmap["\\"] = "-"
+        name = slug(name, { remove: /^\/*|\/*$|[/*]{2,}/g })
+
         const pages_creator =
           `export const layout = "layouts/${name}.pages.html";
 // export const renderOrder = 0; // default
@@ -665,6 +670,7 @@ const page_opt = {
 const PAGE = {
   command: "<p>",
   describe: "Generates new pages. [--single --multi]",
+  // eslint-disable-next-line max-lines-per-function
   builder: (cli: YargsInstance) =>
     cli.options(page_opt).check(
       function ({ s, m }: { s: string[]; m: string[] }) {
@@ -761,6 +767,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.4")
+    .version("0.8.0.5")
     .parse()
 }

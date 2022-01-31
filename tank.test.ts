@@ -524,7 +524,7 @@ export default function* ({ search, paginate }) {
 
     </main>
 
-    <script type="module" src="/js/main.js"></script>
+    <script type="module" src="./../main.js"></script>
 </body>
 
 </html>`
@@ -615,6 +615,81 @@ console.log("money indice!")\`;`
     mock.restore()
   }
 })
+
+Deno.test("tank can slug a --multiple names", () => {
+  try {
+    tank(mock).pages_handler({ multiple: ["landing-page"] })
+
+    assertMultiplePageFileNames("landing-page")
+    mock.restore()
+
+    tank(mock).pages_handler({ multiple: ["/-$-pricing-$-/"] })
+    assertMultiplePageFileNames("pricing")
+    mock.restore()
+
+    tank(mock).pages_handler({ multiple: ["//eve///nts//"] })
+    assertMultiplePageFileNames("eve-nts")
+    mock.restore()
+
+    tank(mock).pages_handler({ multiple: ["\\ev\\\\\\ents\\"] })
+    assertMultiplePageFileNames("ev-ents")
+  } finally {
+    mock.restore()
+  }
+})
+
+Deno.test("tank can handle a --multiple names with sub-directories", () => {
+  try {
+    tank(mock).pages_handler({ multiple: ["landing-page/my/subfolder/page"] })
+    assertMultiplePageFileNames("landing-page-my-subfolder-page")
+  } finally {
+    mock.restore()
+  }
+})
+
+Deno.test("tank can handle a --multiple names with Windows slashes \\.", () => {
+  try {
+    tank(mock).pages_handler({ multiple: ["landing-page\\my\\subfolder\\page"] })
+    assertMultiplePageFileNames("landing-page-my-subfolder-page")
+  } finally {
+    mock.restore()
+  }
+})
+
+function assertMultiplePageFileNames(name: string) {
+  assertEquals(
+    mock._create_page_file({ call: 0 }).args[0],
+    `${name}.api.pages.js`
+  )
+  assertEquals(
+    mock._create_page_file({ call: 1 }).args[0],
+    `blocks/layouts/${name}.pages.html`
+  )
+  assertEquals(
+    mock._create_page_file({ call: 2 }).args[0],
+    `${name}.api.indice.js`
+  )
+  assertEquals(
+    mock._create_page_file({ call: 3 }).args[0],
+    "blocks/layouts/paginator.pages.html"
+  )
+  assertEquals(
+    mock._create_page_file({ call: 4 }).args[0],
+    `${name}.css.indice.js`
+  )
+  assertEquals(
+    mock._create_page_file({ call: 5 }).args[0],
+    `${name}.css.pages.js`
+  )
+  assertEquals(
+    mock._create_page_file({ call: 6 }).args[0],
+    `${name}.js.indice.js`
+  )
+  assertEquals(
+    mock._create_page_file({ call: 7 }).args[0],
+    `${name}.js.pages.js`
+  )
+}
 
 function assertPageFile({
   file,
