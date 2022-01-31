@@ -368,6 +368,7 @@ Deno.test("tank can handle a page names with Windows slashes \\.", () => {
 Deno.test("tank can create a multiple page creator files.", () => {
   try {
     tank(mock).pages_handler({ multiple: ["money"] })
+
     const money_page = `export const layout = "layouts/money.pages.html";
 // export const renderOrder = 0; // default
 
@@ -528,7 +529,41 @@ export default function* ({ search, paginate }) {
 
 </html>`
 
-    assertPageFile({ file: "money.pages.js", call: 0, content: money_page })
+    const css_indice_file = `export const url = "./money/page/styles.css";
+
+export default () =>
+  \`@tailwind base;
+@tailwind components;
+@tailwind utilities;\`;`
+
+    const css_pages_file = `export const url = "./money/styles.css";
+
+export default () =>
+  \`@tailwind base;
+@tailwind components;
+@tailwind utilities;\`;`
+
+    const js_pages_file = `export const url = "./money/main.js";
+
+export default () =>
+  \`import "./styles.css";
+
+// add all your js content...
+console.log("money page!")\`;`
+
+    const js_indice_file = `export const url = "./money/page/main.js";
+
+export default () =>
+  \`import "./styles.css";
+
+// add all your js content...
+console.log("money indice!")\`;`
+
+    assertPageFile({
+      file: "money.api.pages.js",
+      call: 0,
+      content: money_page,
+    })
     assertPageFile({
       file: "blocks/layouts/money.pages.html",
       call: 1,
@@ -542,14 +577,39 @@ export default function* ({ search, paginate }) {
     )
 
     assertPageFile({
-      file: "money.paginator.pages.js",
+      file: "money.api.indice.js",
       call: 2,
       content: paginator_file,
     })
+
     assertPageFile({
       file: "blocks/layouts/paginator.pages.html",
       call: 3,
       content: paginator_layout,
+    })
+
+    assertPageFile({
+      file: "money.css.indice.js",
+      call: 4,
+      content: css_indice_file,
+    })
+
+    assertPageFile({
+      file: "money.css.pages.js",
+      call: 5,
+      content: css_pages_file,
+    })
+
+    assertPageFile({
+      file: "money.js.indice.js",
+      call: 6,
+      content: js_indice_file,
+    })
+
+    assertPageFile({
+      file: "money.js.pages.js",
+      call: 7,
+      content: js_pages_file,
     })
   } finally {
     mock.restore()

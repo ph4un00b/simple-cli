@@ -208,15 +208,49 @@ export default function* ({ search, paginate }) {
 
 </html>`
 
-        create_page_file(`${name}.pages.js`, pages_creator)
+        const css_indice_file = `export const url = "./${name}/page/styles.css";
+
+export default () =>
+  \`@tailwind base;
+@tailwind components;
+@tailwind utilities;\`;`
+
+        const css_page_file = `export const url = "./${name}/styles.css";
+
+export default () =>
+  \`@tailwind base;
+@tailwind components;
+@tailwind utilities;\`;`
+
+        const js_pages_file = `export const url = "./${name}/main.js";
+
+export default () =>
+  \`import "./styles.css";
+
+// add all your js content...
+console.log("${name} page!")\`;`
+
+        const js_indice_file = `export const url = "./${name}/page/main.js";
+
+export default () =>
+  \`import "./styles.css";
+
+// add all your js content...
+console.log("${name} indice!")\`;`
+
+        create_page_file(`${name}.api.pages.js`, pages_creator)
         create_dir("blocks/layouts")
         create_page_file(`blocks/layouts/${name}.pages.html`, pages_layout)
         create_macro_block("pages_title")
-        create_page_file(`${name}.paginator.pages.js`, paginator_file)
+        create_page_file(`${name}.api.indice.js`, paginator_file)
         create_page_file(
           "blocks/layouts/paginator.pages.html",
           paginator_layout,
         )
+        create_page_file(`${name}.css.indice.js`, css_indice_file)
+        create_page_file(`${name}.css.pages.js`, css_page_file)
+        create_page_file(`${name}.js.indice.js`, js_indice_file)
+        create_page_file(`${name}.js.pages.js`, js_pages_file)
       })
     }
 
@@ -727,6 +761,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.1")
+    .version("0.8.0.2")
     .parse()
 }
