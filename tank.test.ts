@@ -431,7 +431,7 @@ export const layout = "layouts/paginator.pages.html";
 export const renderOrder = 1;
 
 // modify your paginator URL as you desire :).
-const opts = { url: (n) => \`/paginator/page/\${n}/\`, size: 8 };
+const opts = { url: (n) => \`/money/page/\${n}/\`, size: 8 };
 
 export default function* ({ search, paginate }) {
   // https://lumeland.github.io/core/pagination/
@@ -444,7 +444,7 @@ export default function* ({ search, paginate }) {
     if (page.pagination.page === 1) {
       page.menu = {
         visible: true,
-        title: "Page 1",
+        title: "money pages",
       };
     }
     yield page;
