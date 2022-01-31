@@ -203,7 +203,7 @@ export default function* ({ search, paginate }) {
 
     </main>
 
-    <script type="module" src="/js/main.js"></script>
+    <script type="module" src="./../main.js"></script>
 </body>
 
 </html>`
@@ -761,6 +761,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.3")
+    .version("0.8.0.4")
     .parse()
 }
