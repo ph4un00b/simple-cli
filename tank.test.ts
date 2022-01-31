@@ -91,7 +91,7 @@ Deno.test(
     } finally {
       mock.restore()
     }
-  }
+  },
 )
 
 Deno.test("tank can create a html block", () => {
@@ -183,7 +183,8 @@ Deno.test("tank can create a macro block", () => {
     assertBlockFile({
       call,
       file: "blocks/title.macro.html",
-      content: `<!-- https://mozilla.github.io/nunjucks/templating.html#macro -->
+      content:
+        `<!-- https://mozilla.github.io/nunjucks/templating.html#macro -->
 
 {% macro title(text, transform = 'uppercase') %}
 
@@ -204,7 +205,8 @@ Deno.test("tank can create a macro block", () => {
 
     assertAppend({
       call,
-      content: `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
+      content:
+        `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
 
     <section
         class="flex flex-col-reverse items-center space-y-2 font-bold transition duration-500 bg-gray-900 cursor-move hover:bg-violet-600 space">
@@ -223,28 +225,28 @@ Deno.test("tank generator can slug fancy block names", () => {
     tank(mock).generate_handler({ macro: ["fancy-title"] })
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
-      "blocks/fancy_title.macro.html"
+      "blocks/fancy_title.macro.html",
     )
     mock.restore()
 
     tank(mock).generate_handler({ api: ["fancy]title"] })
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
-      "blocks/fancytitle.html"
+      "blocks/fancytitle.html",
     )
     mock.restore()
 
     tank(mock).generate_handler({ data: ["fancy///title"] })
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
-      "blocks/fancytitle.html"
+      "blocks/fancytitle.html",
     )
     mock.restore()
 
     tank(mock).generate_handler({ html: ["FANCY=title%"] })
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
-      "blocks/fancytitle.html"
+      "blocks/fancytitle.html",
     )
     mock.restore()
   } finally {
@@ -311,28 +313,28 @@ Deno.test("tank can slug a page names", () => {
     tank(mock).pages_handler({ single: ["landing-page"] })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
-      "landing-page/index.html"
+      "landing-page/index.html",
     )
     mock.restore()
 
     tank(mock).pages_handler({ single: ["/-$-pricing-$-/"] })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
-      "pricing/index.html"
+      "pricing/index.html",
     )
     mock.restore()
 
     tank(mock).pages_handler({ single: ["//eve///nts//"] })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
-      "events/index.html"
+      "events/index.html",
     )
     mock.restore()
 
     tank(mock).pages_handler({ single: ["\\ev\\\\\\ents\\"] })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
-      "events/index.html"
+      "events/index.html",
     )
   } finally {
     mock.restore()
@@ -344,20 +346,210 @@ Deno.test("tank can handle a page names with sub-directories", () => {
     tank(mock).pages_handler({ single: ["landing-page/my/subfolder/page"] })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
-      "landing-page/my/subfolder/page/index.html"
+      "landing-page/my/subfolder/page/index.html",
     )
   } finally {
     mock.restore()
   }
 })
 
-Deno.test("tank can handle a page names with Windows slashes \\", () => {
+Deno.test("tank can handle a page names with Windows slashes \\.", () => {
   try {
     tank(mock).pages_handler({ single: ["landing-page\\my\\subfolder\\page"] })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
-      "landing-page/my/subfolder/page/index.html"
+      "landing-page/my/subfolder/page/index.html",
     )
+  } finally {
+    mock.restore()
+  }
+})
+
+Deno.test("tank can create a multiple page creator files.", () => {
+  try {
+    tank(mock).pages_handler({ multiple: ["money"] })
+    const money_page = `export const layout = "layouts/money.pages.html";
+// export const renderOrder = 0; // default
+
+export default async function* () {
+  const response = await fetch(
+    "https://api.coinlore.net/api/tickers/?start=30&limit=16",
+  );
+  const { data: api_data } = await response.json();
+
+  for (const page of api_data) {
+    yield {
+      title: page.name,
+      usd: page.price_usd,
+      btc: page.price_btc,
+      change_day: page.percent_change_24h,
+      change_week: page.percent_change_7d,
+      market: page.market_cap_usd,
+      // Make sure the URL last character is slash "/"
+      // in order to create an index.html page.
+      url: \`./money/\${page.name}/\`,
+      tags: ["api-money"],
+    };
+  }
+}`
+
+    const money_layout = `<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+</head>
+
+<body>
+    {% from "title.macro.html" import title %}
+
+    <h1>{{ title(title) }}: {{ usd }} US / {{ btc }} BTC</h1>
+
+    <section>
+        <div>market: {{ market }}</div>
+        <div>last 24 hrs: {{ change_day }}</div>
+        <div>last week hrs: {{ change_week }}</div>
+    </section>
+
+    <script type="module" src="./../main.js"></script>
+</body>
+
+</html>`
+
+    const paginator_file = `export const title = "money pages";
+export const global_text = "Have nice day :) !";
+export const layout = "layouts/paginator.pages.html";
+
+// Changed this to "1"
+// in order to create this paginated pages
+// after the others are done.
+export const renderOrder = 1;
+
+// modify your paginator URL as you desire :).
+const opts = { url: (n) => \`/paginator/page/\${n}/\`, size: 8 };
+
+export default function* ({ search, paginate }) {
+  // https://lumeland.github.io/core/pagination/
+  const items = search.pages("api-money");
+
+  for (const page of paginate(items, opts)) {
+    // Added property "menu"
+    // in order to show the first page
+    // within our template "paginator.pages.html".
+    if (page.pagination.page === 1) {
+      page.menu = {
+        visible: true,
+        title: "Page 1",
+      };
+    }
+    yield page;
+  }
+}`
+
+    const paginator_layout = `<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <meta name="description" content="">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="alternate" href="/feed.xml" type="application/atom+xml" title="">
+    <link rel="alternate" href="/feed.json" type="application/json" title="">
+</head>
+
+<body>
+
+    <nav>
+        <a href="/">
+            <strong>Home</strong>
+        </a>
+
+        <ul>
+            {% for entry in search.pages("menu.visible=true") %}
+            <li>
+                <a href="{{ entry.data.url }}">
+                    {{ entry.data.menu.title or entry.data.title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+
+    <main>
+        <h1>{{ title }}: "{{ global_text }}"</h1>
+        {% set pages = results %}
+
+        <nav>
+            <ul>
+                {% if pagination.previous %}
+                <li>
+                    <a href="{{ pagination.previous }}" rel="prev">← Previous</a>
+                </li>
+                {% endif %}
+                <li>
+                    Page {{ pagination.page }}
+                </li>
+                {% if pagination.next %}
+                <li>
+                    <a href="{{ pagination.next }}" rel="next">Next →</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <ul>
+            {% for page in pages %}
+            <li>
+                <a href="{{ page.data.url }}">
+                    {% if page.data.title %}
+                    <strong>{{ page.data.title }}</strong>
+                    {% else %}
+                    <code>{{ page.url }}</code>
+                    {% endif %}
+                </a>
+
+                <time datetime="{{ page.data.date }}">
+                    {{ page.data.date }}
+                </time>
+            </li>
+            {% endfor %}
+        </ul>
+
+    </main>
+
+    <script type="module" src="/js/main.js"></script>
+</body>
+
+</html>`
+
+    assertPageFile({ file: "money.pages.js", call: 0, content: money_page })
+    assertPageFile({
+      file: "blocks/layouts/money.pages.html",
+      call: 1,
+      content: money_layout,
+    })
+
+    assertEquals(mock._create_dir({ call: 0 }).args, "blocks/layouts")
+    assertEquals(
+      mock._create_block_file({ call: 0 }).args[0],
+      "blocks/title.macro.html",
+    )
+
+    assertPageFile({
+      file: "money.paginator.pages.js",
+      call: 2,
+      content: paginator_file,
+    })
+    assertPageFile({
+      file: "blocks/layouts/paginator.pages.html",
+      call: 3,
+      content: paginator_layout,
+    })
   } finally {
     mock.restore()
   }
@@ -412,15 +604,15 @@ function assertApiBlock({ call, name }: { call: number; name: string }) {
   assertEquals(
     file2,
     `blocks/${name}.api.dev.js`,
-    `${name}.api.dev.js not created.`
+    `${name}.api.dev.js not created.`,
   )
   assert(
     content2
       .split("\n")
       .includes(
-        "    \"https://animechan.vercel.app/api/quotes/anime?title=zero+kara\","
+        "    \"https://animechan.vercel.app/api/quotes/anime?title=zero+kara\",",
       ),
-    content2
+    content2,
   )
 
   const [file3, content3] = mock._create_block_file({ call: call + 2 }).args
@@ -428,14 +620,14 @@ function assertApiBlock({ call, name }: { call: number; name: string }) {
     content3
       .split("\n")
       .includes(
-        "    \"https://animechan.vercel.app/api/quotes/anime?title=saint+seiya\","
+        "    \"https://animechan.vercel.app/api/quotes/anime?title=saint+seiya\",",
       ),
-    content3
+    content3,
   )
   assertEquals(
     file3,
     `blocks/${name}.api.prod.js`,
-    `${name}.api.prod.js not created.`
+    `${name}.api.prod.js not created.`,
   )
 }
 
@@ -448,7 +640,7 @@ function assertDataBlock({ call, name }: { call: number; name: string }) {
   assertEquals(
     file2,
     `blocks/${name}.data.json`,
-    `${name}.data.json not created.`
+    `${name}.data.json not created.`,
   )
   assertEquals(
     content2,
@@ -458,7 +650,7 @@ function assertDataBlock({ call, name }: { call: number; name: string }) {
       name +
       "\"\n  },\n  {\n    \"title\": \"second title\",\n    \"content\": \"more content for " +
       name +
-      "\"\n  }\n]"
+      "\"\n  }\n]",
   )
 }
 

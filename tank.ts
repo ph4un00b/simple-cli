@@ -41,12 +41,190 @@ export function tank(spec: Actions) {
   } = spec
 
   // eslint-disable-next-line max-lines-per-function
-  function pages_handler({ single }: { single: string[] }) {
-    if (_not_empty(single)) {
+  function pages_handler(
+    { single, multiple }: { single?: string[]; multiple?: string[] },
+  ) {
 
+    console.log(multiple)
+    if (_not_empty(multiple)) {
+      // eslint-disable-next-line max-lines-per-function
+      multiple?.forEach((name) => {
+        const pages_creator =
+          `export const layout = "layouts/${name}.pages.html";
+// export const renderOrder = 0; // default
+
+export default async function* () {
+  const response = await fetch(
+    "https://api.coinlore.net/api/tickers/?start=30&limit=16",
+  );
+  const { data: api_data } = await response.json();
+
+  for (const page of api_data) {
+    yield {
+      title: page.name,
+      usd: page.price_usd,
+      btc: page.price_btc,
+      change_day: page.percent_change_24h,
+      change_week: page.percent_change_7d,
+      market: page.market_cap_usd,
+      // Make sure the URL last character is slash "/"
+      // in order to create an index.html page.
+      url: \`./${name}/\${page.name}/\`,
+      tags: ["api-${name}"],
+    };
+  }
+}`
+
+        const pages_layout = `<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+</head>
+
+<body>
+    {% from "title.macro.html" import title %}
+
+    <h1>{{ title(title) }}: {{ usd }} US / {{ btc }} BTC</h1>
+
+    <section>
+        <div>market: {{ market }}</div>
+        <div>last 24 hrs: {{ change_day }}</div>
+        <div>last week hrs: {{ change_week }}</div>
+    </section>
+
+    <script type="module" src="./../main.js"></script>
+</body>
+
+</html>`
+
+        const paginator_file = `export const title = "${name} pages";
+export const global_text = "Have nice day :) !";
+export const layout = "layouts/paginator.pages.html";
+
+// Changed this to "1"
+// in order to create this paginated pages
+// after the others are done.
+export const renderOrder = 1;
+
+// modify your paginator URL as you desire :).
+const opts = { url: (n) => \`/paginator/page/\${n}/\`, size: 8 };
+
+export default function* ({ search, paginate }) {
+  // https://lumeland.github.io/core/pagination/
+  const items = search.pages("api-${name}");
+
+  for (const page of paginate(items, opts)) {
+    // Added property "menu"
+    // in order to show the first page
+    // within our template "paginator.pages.html".
+    if (page.pagination.page === 1) {
+      page.menu = {
+        visible: true,
+        title: "Page 1",
+      };
+    }
+    yield page;
+  }
+}`
+
+        const paginator_layout = `<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <meta name="description" content="">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="alternate" href="/feed.xml" type="application/atom+xml" title="">
+    <link rel="alternate" href="/feed.json" type="application/json" title="">
+</head>
+
+<body>
+
+    <nav>
+        <a href="/">
+            <strong>Home</strong>
+        </a>
+
+        <ul>
+            {% for entry in search.pages("menu.visible=true") %}
+            <li>
+                <a href="{{ entry.data.url }}">
+                    {{ entry.data.menu.title or entry.data.title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+
+    <main>
+        <h1>{{ title }}: "{{ global_text }}"</h1>
+        {% set pages = results %}
+
+        <nav>
+            <ul>
+                {% if pagination.previous %}
+                <li>
+                    <a href="{{ pagination.previous }}" rel="prev">← Previous</a>
+                </li>
+                {% endif %}
+                <li>
+                    Page {{ pagination.page }}
+                </li>
+                {% if pagination.next %}
+                <li>
+                    <a href="{{ pagination.next }}" rel="next">Next →</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <ul>
+            {% for page in pages %}
+            <li>
+                <a href="{{ page.data.url }}">
+                    {% if page.data.title %}
+                    <strong>{{ page.data.title }}</strong>
+                    {% else %}
+                    <code>{{ page.url }}</code>
+                    {% endif %}
+                </a>
+
+                <time datetime="{{ page.data.date }}">
+                    {{ page.data.date }}
+                </time>
+            </li>
+            {% endfor %}
+        </ul>
+
+    </main>
+
+    <script type="module" src="/js/main.js"></script>
+</body>
+
+</html>`
+
+        create_page_file(`${name}.pages.js`, pages_creator)
+        create_dir("blocks/layouts")
+        create_page_file(`blocks/layouts/${name}.pages.html`, pages_layout)
+        create_macro_block("title")
+        create_page_file(`${name}.paginator.pages.js`, paginator_file)
+        create_page_file(
+          "blocks/layouts/paginator.pages.html",
+          paginator_layout,
+        )
+      })
+    }
+
+    if (_not_empty(single)) {
       create_macro_block("title")
       // eslint-disable-next-line max-lines-per-function
-      single.forEach((page_name) => {
+      single?.forEach((page_name) => {
         slug.charmap["-"] = "-"
         slug.charmap["/"] = "/"
         slug.charmap["\\"] = "/"
@@ -443,26 +621,33 @@ const page_opt = {
       "Creates a single page. You need Vite config in order to run it!.",
     type: "array",
   },
+  "m": {
+    alias: "multiple",
+    describe:
+      "Creates multple page creator files. You need Vite config in order to run it!.",
+    type: "array",
+  },
 }
 
 const PAGE = {
   command: "<p>",
-  describe: `Generates new pages. [${
-    brightCyan(
-      "--single contact pricing login",
-    )
-  }]`,
+  describe: "Generates new pages. [--single --multi]",
   builder: (cli: YargsInstance) =>
-    cli.options(page_opt).check(function ({ s }: { s: string[] }) {
+    cli.options(page_opt).check(function ({ s, m }: { s: string[]; m: string[] }) {
       // todo: e2e
       if (_not_empty_option(s)) {
-        throw new Error(brightRed("Single page name required."))
+        throw new Error(brightRed("Single page path name required."))
+      }
+
+      // todo: e2e
+      if (_not_empty_option(m)) {
+        throw new Error(brightRed("Multiple page path name required."))
       }
 
       return true
     }),
   handler: tank(actions).pages_handler,
-  example: ["tank p --single signup"],
+  example: ["tank p --single signup --multiple anime"],
 }
 
 function _not_empty(block: string[] | undefined) {
@@ -541,6 +726,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.7.0.8")
+    .version("0.8.0.0")
     .parse()
 }
