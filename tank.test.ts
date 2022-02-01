@@ -19,7 +19,7 @@ Deno.test("tank can create a fancy blog", async () => {
   }
 })
 
-Deno.test("tank can create an unfancy blog on Windows", async () => {
+Deno.test("tank can create an unfancy blog", async () => {
   await tank(mock).blog_handler({
     name: "test",
     bs: true,
@@ -44,17 +44,12 @@ Deno.test("tank can create an unfancy blog on Windows", async () => {
 @tailwind utilities;`,
     })
 
-    assertEquals(mock.executed({ call: 0 }).args, [
-      "cmd",
-      "/c",
-      "cd",
-      "test",
-      "&&",
-      "cmd",
-      "/c",
-      "npm",
-      "install",
-    ])
+    if (Deno.build.os === "windows") {
+      assertEquals(mock.executed({ call: 0 }).args, [ "cmd", "/c", "cd", "test", "&&", "cmd", "/c", "npm", "install" ])
+    } else {
+      assertEquals(mock.executed({ call: 0 }).args, [ "cd", "test", "&&", "npm", "install" ])
+    }
+
     assertOutput("\nTry your fancy project: \x1b[92mcd test\x1b[39m!\n")
   } finally {
     mock.restore()
@@ -62,7 +57,7 @@ Deno.test("tank can create an unfancy blog on Windows", async () => {
 })
 
 Deno.test(
-  "tank can add vite configs inside a directory on Windows",
+  "tank can add vite configs inside a directory",
   async () => {
     await tank(mock).vite_handler()
 
@@ -77,12 +72,12 @@ Deno.test(
 @tailwind utilities;`,
       })
 
-      assertEquals(mock.executed({ call: 0 }).args, [
-        "cmd",
-        "/c",
-        "npm",
-        "install",
-      ])
+      if (Deno.build.os === "windows") {
+        assertEquals(mock.executed({ call: 0 }).args, [ "cmd", "/c", "npm", "install" ])
+      } else {
+        assertEquals(mock.executed({ call: 0 }).args, [ "npm", "install" ])
+      }
+
       assertOutput("\nTry \x1b[92mnpm run dev\x1b[39m!\n")
     } finally {
       mock.restore()

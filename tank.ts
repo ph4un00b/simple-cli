@@ -535,7 +535,11 @@ module.exports = async function () {
       }
 
       try {
-        await exec(["cmd", "/c", "mv", "_site/**", "."])
+        if (Deno.build.os === "windows") {
+          await exec(["cmd", "/c", "mv", "_site/**", "."])
+        } else {
+          await exec(["cp", "-R", "_site/", "."])
+        }
         Deno.removeSync("_site", { recursive: true })
       } catch (error) {
         // console.log(error);
@@ -774,7 +778,7 @@ const page_opt = {
 
 const PAGE = {
   command: "<p>",
-  describe: "Generates new pages. [--single --multi]",
+  describe: "Generates new pages. [--single --multiple --build]",
   // eslint-disable-next-line max-lines-per-function
   builder: (cli: YargsInstance) =>
     cli.options(page_opt).check(
@@ -803,22 +807,16 @@ function _not_empty(block: string[] | undefined) {
 }
 
 // eslint-disable-next-line max-lines-per-function
-function _npm_install_for_windows(
-  name: string | undefined,
-): string[] {
+function _npm_install_for_windows(name?: string): string[] {
+  if (Deno.build.os === "windows") {
+    return name
+      ? [ "cmd", "/c", "cd", name, "&&", "cmd", "/c", "npm", "install" ]
+      : ["cmd", "/c", "npm", "install"]
+  }
+
   return name
-    ? [
-      "cmd",
-      "/c",
-      "cd",
-      name,
-      "&&",
-      "cmd",
-      "/c",
-      "npm",
-      "install",
-    ]
-    : ["cmd", "/c", "npm", "install"]
+    ? ["cd", name, "&&", "npm", "install"]
+    : ["npm", "install"]
 }
 
 // eslint-disable-next-line max-lines-per-function
@@ -873,6 +871,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.6")
+    .version("0.8.0.13")
     .parse()
 }

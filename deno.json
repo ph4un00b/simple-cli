@@ -18,12 +18,7 @@
   "fmt": {
     "files": {
       "include": ["."],
-      "exclude": [
-        "node_modules",
-        "e2e",
-        "src/tank.test.js",
-        "tank.test.js"
-      ]
+      "exclude": ["node_modules", "e2e", "src/tank.test.js", "tank.test.js"]
     },
     "options": {
       "useTabs": false,

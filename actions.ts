@@ -4,7 +4,7 @@ import {
   DOMParser,
   Element,
   HTMLDocument,
-} from "https://deno.land/x/deno_dom/deno-dom-native.ts"
+} from "https://deno.land/x/deno_dom@v0.1.21-alpha/deno-dom-wasm.ts"
 
 import {
   FancyFilesList,
@@ -73,7 +73,9 @@ export const actions: Actions = (function () {
   }
 
   function create_page_file(full_path: string, content: string) {
-    const folder = path.parse(full_path).dir
+    let folder = path.parse(full_path).dir
+    if (folder === "" || folder === undefined) folder = "."
+
     // TODO: e2e test dont overwrite
     for (const entry of walkSync(folder, { maxDepth: 1 })) {
       if (path.basename(full_path) === path.basename(entry.path)) {

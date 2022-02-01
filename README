@@ -1,4 +1,9 @@
 # dev
+- install
+$ deno install --reload -n tank --allow-read --allow-write --unstable --no-check --allow-run --allow-env --allow-ffi --allow-net https://raw.githubusercontent.com/ph4un00b/simple-cli/main/tank.ts
+
+- test
+$  deno test --allow-read --allow-run --allow-write --unstable --allow-env --allow-ffi .\tank.test.ts --ignore=node_modules
 
 - e2e:
 $ deno test --allow-read --allow-run --allow-write --allow-env --allow-ffi
