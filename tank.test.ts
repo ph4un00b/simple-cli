@@ -1,9 +1,5 @@
 /* eslint-disable max-lines-per-function */
-import {
-  assert,
-  assertEquals,
-  fail,
-} from "https://deno.land/std/testing/asserts.ts"
+import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts"
 
 import { tank } from "./tank.ts"
 import { actionsMock as mock } from "./utils_dev.ts"
@@ -571,10 +567,13 @@ console.log("money indice!")\`;`
     })
 
     assertEquals(mock._create_dir({ call: 0 }).args, "blocks/layouts")
+
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
       "blocks/pages_title.macro.html",
     )
+
+    assertEquals(mock._insert_content({ call: 0 }).args, undefined)
 
     assertPageFile({
       file: "money.api.indice.js",
@@ -649,45 +648,67 @@ Deno.test("tank can handle a --multiple names with sub-directories", () => {
 
 Deno.test("tank can handle a --multiple names with Windows slashes \\.", () => {
   try {
-    tank(mock).pages_handler({ multiple: ["landing-page\\my\\subfolder\\page"] })
+    tank(mock).pages_handler({
+      multiple: ["landing-page\\my\\subfolder\\page"],
+    })
     assertMultiplePageFileNames("landing-page-my-subfolder-page")
   } finally {
     mock.restore()
   }
 })
 
+Deno.test({
+  name:
+    "tank can build --multiple pages and move files in current directory on Windows.",
+  ignore: true,
+  fn: async () => {
+    try {
+      await tank(mock).pages_handler({ build: true })
+      // assertEquals(mock.executed({ call: 0 }).args, [
+      //   "cmd",
+      //   "/c",
+      //   "mv",
+      //   "_site/**",
+      //   ".",
+      // ])
+    } finally {
+      mock.restore()
+    }
+  },
+})
+
 function assertMultiplePageFileNames(name: string) {
   assertEquals(
     mock._create_page_file({ call: 0 }).args[0],
-    `${name}.api.pages.js`
+    `${name}.api.pages.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 1 }).args[0],
-    `blocks/layouts/${name}.pages.html`
+    `blocks/layouts/${name}.pages.html`,
   )
   assertEquals(
     mock._create_page_file({ call: 2 }).args[0],
-    `${name}.api.indice.js`
+    `${name}.api.indice.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 3 }).args[0],
-    "blocks/layouts/paginator.pages.html"
+    "blocks/layouts/paginator.pages.html",
   )
   assertEquals(
     mock._create_page_file({ call: 4 }).args[0],
-    `${name}.css.indice.js`
+    `${name}.css.indice.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 5 }).args[0],
-    `${name}.css.pages.js`
+    `${name}.css.pages.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 6 }).args[0],
-    `${name}.js.indice.js`
+    `${name}.js.indice.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 7 }).args[0],
-    `${name}.js.pages.js`
+    `${name}.js.pages.js`,
   )
 }
 

@@ -193,6 +193,7 @@ function _insert_into_index(spec: InsertBlock) {
     _mutate_body_element(spec)
     _overwrite_index("<!DOCTYPE html>\n" + spec.dom.documentElement.outerHTML)
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.log(error)
   }
 }

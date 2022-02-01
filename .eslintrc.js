@@ -47,7 +47,7 @@ module.exports = {
     ],
     "no-shadow": "error",
     "no-else-return": "error",
-    "no-console": 1,
+    "no-console": 2,
     "indent": [
       "error",
       2,
@@ -68,4 +68,4 @@ module.exports = {
       "error",
     ],
   },
-};
+}

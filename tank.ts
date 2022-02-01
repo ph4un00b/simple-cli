@@ -3,7 +3,6 @@ import {
   brightCyan,
   brightGreen,
   brightRed,
-  green,
 } from "https://deno.land/std@0.121.0/fmt/colors.ts"
 
 import {
@@ -18,6 +17,11 @@ import {
 import { Actions, actions } from "./actions.ts"
 import { YargsInstance } from "https://deno.land/x/yargs@v17.3.1-deno/build/lib/yargs-factory.js"
 import slug from "https://esm.sh/slug@5.2.0"
+
+import lume from "https://deno.land/x/lume@v1.4.3/mod.ts"
+import slugify_urls from "https://deno.land/x/lume@v1.4.3/plugins/slugify_urls.ts"
+import { parse } from "https://deno.land/std@0.121.0/path/mod.ts"
+
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {}
 
@@ -41,13 +45,20 @@ export function tank(spec: Actions) {
   } = spec
 
   // eslint-disable-next-line max-lines-per-function
-  function pages_handler(
-    { single, multiple }: { single?: string[]; multiple?: string[] },
+  async function pages_handler(
+    { single, multiple, build }: {
+      single?: string[];
+      multiple?: string[];
+      build?: boolean;
+    },
   ) {
+    if (build) {
+      await build_multiple_pages()
+    }
+
     if (_not_empty(multiple)) {
       // eslint-disable-next-line max-lines-per-function
       multiple?.forEach((name) => {
-
         slug.charmap["/"] = "-"
         slug.charmap["\\"] = "-"
         name = slug(name, { remove: /^\/*|\/*$|[/*]{2,}/g })
@@ -246,7 +257,7 @@ console.log("${name} indice!")\`;`
         create_page_file(`${name}.api.pages.js`, pages_creator)
         create_dir("blocks/layouts")
         create_page_file(`blocks/layouts/${name}.pages.html`, pages_layout)
-        create_macro_block("pages_title")
+        create_macro_block("pages_title", false)
         create_page_file(`${name}.api.indice.js`, paginator_file)
         create_page_file(
           "blocks/layouts/paginator.pages.html",
@@ -334,7 +345,7 @@ console.log("${page_name}!!!")`,
   }
 
   // eslint-disable-next-line max-lines-per-function
-  function create_macro_block(name: string) {
+  function create_macro_block(name: string, insert = true) {
     create_dir("blocks")
     create_block_file(
       `blocks/${name}.macro.html`,
@@ -356,6 +367,8 @@ console.log("${page_name}!!!")`,
 
 {% endmacro %}`,
     )
+
+    if (!insert) return
 
     insert_content(
       `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
@@ -448,6 +461,93 @@ module.exports = async function () {
     if (name) create_blog("no-bullshit", name)
     if (!bs) return
     await add_vite({ for_project: name })
+  }
+
+  // eslint-disable-next-line max-lines-per-function
+  async function build_multiple_pages() {
+    // todo, tests with sinon
+    const site = lume(
+      { quiet: false },
+      {
+        yaml: {
+          extensions: [".pages.yaml", ".pages.yml"],
+        },
+        markdown: {
+          // todo[1]: error, research why content is not parsed?
+          extensions: [".pages.md"],
+        },
+        json: {
+          // not working, due to docs
+          extensions: {
+            data: [".pages.json"],
+            pages: [".pages.json"],
+          },
+        },
+        // todo: pr docs enhancement
+        modules: {
+          extensions: {
+            pages: [".indice.js", ".pages.js", ".pages.ts", ".pages.md"],
+            data: [".pages.js", ".pages.ts"],
+            components: [".pages.js", ".pages.ts"],
+          },
+        },
+        nunjucks: {
+          extensions: [".pages.html"],
+          includes: "blocks",
+          options: {
+            throwOnUndefined: true,
+          },
+        },
+      },
+    )
+
+    let start: number
+    const folders_to_remove = new Set<string>()
+
+    site.addEventListener("beforeBuild", () => {
+      start = Date.now()
+    })
+
+    site.use(slugify_urls())
+
+    site.addEventListener("afterBuild", ({ pages }) => {
+      if (!pages) return
+      if (pages.length === 0) return
+
+      for (const { dest: { path } } of pages) {
+        folders_to_remove.add(_parent_directory(path))
+      }
+
+      site.run("deleting-folders")
+
+      const millis = Date.now() - start
+      stdOut(brightGreen(`took: ${Math.floor(millis)} ms.`))
+    })
+
+    // eslint-disable-next-line max-lines-per-function
+    site.script("deleting-folders", async () => {
+      for (const folder of folders_to_remove) {
+        try {
+          Deno.removeSync(folder, { recursive: true })
+        } catch (error) {
+          // console.log(error);
+        }
+      }
+
+      try {
+        await exec(["cmd", "/c", "mv", "_site/**", "."])
+        Deno.removeSync("_site", { recursive: true })
+      } catch (error) {
+        // console.log(error);
+      }
+    })
+
+    function _parent_directory(path: string) {
+      return parse(path).dir.split("/")[1]
+    }
+
+    await site.ignore("blocks").ignore("src").ignore("public").ignore("dist")
+      .build()
   }
 
   function http_handler(argv: HTTPArguments) {
@@ -665,6 +765,11 @@ const page_opt = {
       "Creates multple page creator files. You need Vite config in order to run it!.",
     type: "array",
   },
+  "b": {
+    alias: "build",
+    describe: "Build pages for the --multiple creator files in your project.",
+    type: "boolean",
+  },
 }
 
 const PAGE = {
@@ -673,7 +778,8 @@ const PAGE = {
   // eslint-disable-next-line max-lines-per-function
   builder: (cli: YargsInstance) =>
     cli.options(page_opt).check(
-      function ({ s, m }: { s: string[]; m: string[] }) {
+      // eslint-disable-next-line max-lines-per-function
+      function ({ s, m, b }: { s: string[]; m: string[]; b: boolean }) {
         // todo: e2e
         if (_not_empty_option(s)) {
           throw new Error(brightRed("Single page path name required."))
@@ -767,6 +873,6 @@ if (import.meta.main) {
     ])
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.5")
+    .version("0.8.0.6")
     .parse()
 }
