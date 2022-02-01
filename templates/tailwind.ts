@@ -19,9 +19,7 @@ export type UnfancyFilesList = {
   "main.js": string;
 };
 
-export type FancyFiles = Array<
-  "index.html" | "styles.css" | ".gitignore"
->;
+export type FancyFiles = Array<"index.html" | "styles.css" | ".gitignore">;
 export type UnfancyFiles = Array<
   | "main.js"
   | "postcss.config.js"
@@ -54,13 +52,11 @@ export type FileContents = {
   [key: string]: string;
 };
 
-type NewTemplate = {
+type TailwindTemplate = {
   "no-bullshit": {
     directories: Array<"images">;
     unfancy_directories: Array<"public" | "__tank__">;
-    files: Array<
-      "index.html" | "styles.css" | ".gitignore"
-    >;
+    files: Array<"index.html" | "styles.css" | ".gitignore">;
     unfancy_files: Array<
       | "package.json"
       | "vite.config.js"
@@ -75,7 +71,7 @@ type NewTemplate = {
     file_contents: FileContents;
   };
 };
-export const templates: NewTemplate = {
+export const templates: TailwindTemplate = {
   "no-bullshit": {
     directories: ["images"],
     unfancy_directories: ["public", "__tank__"],
@@ -92,8 +88,7 @@ export const templates: NewTemplate = {
       "__tank__/pages.js",
     ],
     file_contents: {
-      [TANK.pages_file]:
-        `const { resolve, parse } = require("path");
+      [TANK.pages_file]: `const { resolve, parse } = require("path");
 const glob = require("tiny-glob");
 const slug = require("slug");
 
@@ -128,24 +123,24 @@ function _default() {
 
 function _main_full_path() {
   return resolve(__dirname, "../index.html");
-}`,
+}`, // todo[1]: e2e output from npm run dev
       [TANK.default_file]: `module.exports = {
   blocks: {
     dirname: "blocks",
     data_suffix: "items",
-    api_suffix: "api_items"
+    api_suffix: "items"
   },
   nunjucks: {
     dirname: "src/html",
   },
 };`,
-      [TANK.plugins_file]:
-        `const nunjucks = require("./nunjucks.plugin");
+      [TANK.plugins_file]: `const nunjucks = require("./nunjucks.plugin");
 
 module.exports = async function (mode) {
   const { dev, prod } = await nunjucks();
   return mode === "production" ? [prod.NunjucksPlugin] : [dev.NunjucksPlugin];
 };`,
+      // todo[1], e2e output from npm run dev
       [TANK.nunjucks_file]:
         `const _nunjucks = require("vite-plugin-nunjucks").default;
 const _TANK_ = require("./defaults.js");
@@ -153,43 +148,44 @@ const _parse = require("path").parse;
 const _glob = require("tiny-glob");
 
 module.exports = async function () {
-  const data_items = await dataObjects().catch(console.error);
-  const dev_items = await apiObjects({ for: "dev" }).catch(console.error);
-  const prod_items = await apiObjects({ for: "prod" }).catch(console.error);
+  const staticModels = await staticData().catch(console.error);
+  const devModels = await ApiData({ for: "dev" }).catch(console.error);
+  const prodModels = await ApiData({ for: "prod" }).catch(console.error);
 
   return {
-    dev: NunjuckPlugin({ ...data_items, ...dev_items }),
-    prod: NunjuckPlugin({ ...data_items, ...prod_items }),
+    dev: NunjuckPlugin({ ...staticModels, ...devModels }),
+    prod: NunjuckPlugin({ ...staticModels, ...prodModels }),
   };
 };
 
-function NunjuckPlugin(variables) {
+function NunjuckPlugin(globalData) {
   const NunjucksConfig = {
     templatesDir: _TANK_.nunjucks.dirname,
-    variables: { "*": { ...variables } },
+    variables: { "*": { ...globalData } },
   };
 
   const NunjucksPlugin = [_nunjucks(NunjucksConfig)];
   return { NunjucksPlugin };
 }
 
-async function apiObjects({ for: kind }) {
-  const data = await _glob(_for_api(kind)).catch(console.error);
-  if (data) return await data.reduce(_format_api_items, {});
-  return;
+async function ApiData({ for: kind }) {
+  const files = await _glob(_api_files(kind)).catch(console.error);
+  return await files.reduce(_promise_data, Promise.resolve({}));
 }
 
-async function dataObjects() {
-  const data = await _glob(_for_data()).catch(console.error);
-  if (data) return data.reduce(_format_data_items, {});
-  return;
+async function staticData() {
+  const files = await _glob(_data_files()).catch(console.error);
+  return files.reduce(_data, {});
 }
 
-async function _format_api_items(memo, path) {
-  return { ...memo, [_api_name(path)]: await _api_content(path) };
+async function _promise_data(promise_memo, path) {
+  return {
+    ...(await promise_memo),
+    [_api_name(path)]: await _api_content(path),
+  };
 }
 
-function _format_data_items(memo, path) {
+function _data(memo, path) {
   return { ...memo, [_data_name(path)]: _data_content(path) };
 }
 
@@ -202,12 +198,12 @@ function _data_content(path) {
   return require("./" + path);
 }
 
-function _for_api(kind) {
-  return \`\${_TANK_.blocks.dirname}/*.api.\${kind}.js\`;
+function _api_files(kind) {
+  return \`\${_TANK_.blocks.dirname}/*.model.\${kind}.js\`;
 }
 
-function _for_data() {
-  return \`\${_TANK_.blocks.dirname}/*.data.json\`;
+function _data_files() {
+  return \`\${_TANK_.blocks.dirname}/*.model.json\`;
 }
 
 function _data_name(path) {
@@ -218,7 +214,8 @@ function _data_name(path) {
 function _api_name(path) {
   const [name, ...rest] = _parse(path).name.split(".");
   return \`\${name}_\${_TANK_.blocks.api_suffix}\`;
-}`,
+}
+`,
       "package.json": `{
   "name": "tank-project",
   "version": "0.0.0",
@@ -239,8 +236,7 @@ function _api_name(path) {
     "vite-plugin-nunjucks": "0.1.10"
   }
 }`,
-      "vite.config.js":
-        `import { defineConfig } from "vite";
+      "vite.config.js": `import { defineConfig } from "vite";
 import plugins from "./__tank__/plugins";
 import pages from "./__tank__/pages";
 
@@ -259,18 +255,20 @@ export default defineConfig(async ({ mode }) => {
   };
 
   return viteConfigs;
-});`,
+});`, // todo[1] e2e
       "tailwind.config.js":
         `/** @type {import("@types/tailwindcss/tailwind-config").TailwindConfig } */
 module.exports = {
+  // https://tailwindcss.com/docs/content-configuration
   content: [
+    "./blocks/*.{html,js,json}",
     "./index.html",
-    "./blocks/*.html",
-    "!(node_modules|blocks|public|dist)/**/*.html",
+    "./main.js",
   ],
   darkMode: "class",
   plugins: [],
-};`,
+};
+`,
       "postcss.config.js": `module.exports = {
     plugins: {
       tailwindcss: {},

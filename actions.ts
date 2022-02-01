@@ -10,12 +10,9 @@ import {
   FancyFilesList,
   FileContents,
   UnfancyFilesList,
-} from "./templates/new.ts"
+} from "./templates/tailwind.ts"
 
-import {
-  WalkEntry,
-  walkSync,
-} from "https://deno.land/std@0.122.0/fs/mod.ts"
+import { WalkEntry, walkSync } from "https://deno.land/std@0.121.0/fs/mod.ts"
 import {
   bgBlack,
   brightGreen,
@@ -24,26 +21,14 @@ import {
 } from "https://deno.land/std@0.121.0/fmt/colors.ts"
 
 export type Actions = {
-  create_directories: (
-    directories: string[],
-    name?: string,
-  ) => void;
+  create_directories: (directories: string[], name?: string) => void;
   create_files: (spec: CreateFiles) => void;
   exec: (cmd: string[]) => Promise<void>;
   remove: (file: string) => void;
-  create_block_file: (
-    full_path: string,
-    content: string,
-  ) => void;
-  create_page_file: (
-    filename: string,
-    content: string,
-  ) => void;
+  create_block_file: (full_path: string, content: string) => void;
+  create_page_file: (filename: string, content: string) => void;
   create_dir: (name: string) => void;
-  insert_content: (
-    content: string,
-    filename: string,
-  ) => void;
+  insert_content: (content: string, filename: string) => void;
   stdOut: (text: string) => void;
 };
 
@@ -53,16 +38,10 @@ export const actions: Actions = (function () {
   }
 
   // eslint-disable-next-line max-lines-per-function
-  function create_directories(
-    directories: string[],
-    name?: string,
-  ) {
+  function create_directories(directories: string[], name?: string) {
     for (const dir of directories) {
       mkdir_p(_full_path(dir, name))
-      stdOut(
-        _full_path(dir, name) +
-          brightGreen(" Created folder.") + "\n",
-      )
+      stdOut(_full_path(dir, name) + brightGreen(" Created folder.") + "\n")
     }
   }
 
@@ -70,55 +49,34 @@ export const actions: Actions = (function () {
     const { files, name, contents } = spec
 
     for (const key of _filtered_files(files)) {
-      _write_file(
-        _contents(key, contents),
-        _full_path(key as string, name),
-      )
+      _write_file(_contents(key, contents), _full_path(key as string, name))
     }
   }
 
   // eslint-disable-next-line max-lines-per-function
-  function create_block_file(
-    full_path: string,
-    content: string,
-  ) {
+  function create_block_file(full_path: string, content: string) {
     // TODO: e2e test dont overwrite
-    for (
-      const entry of walkSync("blocks", { maxDepth: 1 })
-    ) {
-      if (
-        path.basename(full_path) ===
-          path.basename(entry.path)
-      ) {
+    for (const entry of walkSync("blocks", { maxDepth: 1 })) {
+      if (path.basename(full_path) === path.basename(entry.path)) {
         return stdOut(
-          "\n" + full_path + " " +
-            brightMagenta("Already Created file."),
+          "\n" + full_path + " " + brightMagenta("Already Created file."),
         )
       }
     }
     _write_file(content, full_path)
-    stdOut(
-      "\n" + full_path + " " + brightGreen("Created file."),
-    )
+    stdOut("\n" + full_path + " " + brightGreen("Created file."))
   }
 
   // eslint-disable-next-line max-lines-per-function
-  function create_page_file(
-    full_path: string,
-    content: string,
-  ) {
+  function create_page_file(full_path: string, content: string) {
     let folder = path.parse(full_path).dir
     if (folder === "" || folder === undefined) folder = "."
 
     // TODO: e2e test dont overwrite
     for (const entry of walkSync(folder, { maxDepth: 1 })) {
-      if (
-        path.basename(full_path) ===
-          path.basename(entry.path)
-      ) {
+      if (path.basename(full_path) === path.basename(entry.path)) {
         return stdOut(
-          "\n" + full_path + " " +
-            brightMagenta("Already Created file."),
+          "\n" + full_path + " " + brightMagenta("Already Created file."),
         )
       }
     }
@@ -142,10 +100,7 @@ export const actions: Actions = (function () {
   }
 
   // eslint-disable-next-line max-lines-per-function
-  function insert_content(
-    content: string,
-    filename: string,
-  ) {
+  function insert_content(content: string, filename: string) {
     try {
       _insert(filename, content)
     } catch (e) {
@@ -153,12 +108,8 @@ export const actions: Actions = (function () {
     }
 
     // todo: e2e colors, output
-    stdOut(
-      `\nNew code for: ${brightGreen(filename)}.`,
-    )
-    stdOut(
-      bgBlack(brightMagenta("\n\n" + content + "\n\n")),
-    )
+    stdOut(`\nNew code for: ${brightGreen(filename)}.`)
+    stdOut(bgBlack(brightMagenta("\n\n" + content + "\n\n")))
   }
 
   function stdOut(text: string) {
@@ -192,9 +143,7 @@ function _filtered_files(files: FilesList[]) {
     _filter_files({ entry, files, created_files })
   }
 
-  return files.filter((file) =>
-    !created_files.includes(file)
-  )
+  return files.filter((file) => !created_files.includes(file))
 }
 
 type FilesList = FancyFilesList | UnfancyFilesList | string;
@@ -205,9 +154,7 @@ type Filter = {
   created_files: FilesList[];
 };
 
-function _filter_files(
-  { entry, files, created_files }: Filter,
-) {
+function _filter_files({ entry, files, created_files }: Filter) {
   const current_file = entry.path as keyof FilesList
 
   if (files.includes(current_file)) {
@@ -242,10 +189,7 @@ function _insert_into_index(spec: InsertBlock) {
   try {
     if (!spec.dom.documentElement) return
     _mutate_body_element(spec)
-    _overwrite_index(
-      "<!DOCTYPE html>\n" +
-        spec.dom.documentElement.outerHTML,
-    )
+    _overwrite_index("<!DOCTYPE html>\n" + spec.dom.documentElement.outerHTML)
   } catch (error) {
     // eslint-disable-next-line no-console
     console.log(error)
@@ -278,12 +222,12 @@ function _unescape(string: string) {
   const reEscapedHtml = /&(?:amp|lt|gt|quot|#(0+)?39);/g
   const reHasEscapedHtml = RegExp(reEscapedHtml.source)
 
-  return (string && reHasEscapedHtml.test(string))
+  return string && reHasEscapedHtml.test(string)
     ? string.replace(
       reEscapedHtml,
-      (entity: string) => (htmlUnescapes[entity] || "'"),
+      (entity: string) => htmlUnescapes[entity] || "'",
     )
-    : (string || "")
+    : string || ""
 }
 
 export type CreateFiles = {
@@ -292,10 +236,7 @@ export type CreateFiles = {
   contents: FileContents;
 };
 
-function _contents(
-  key: FilesList,
-  contents: FileContents,
-): string {
+function _contents(key: FilesList, contents: FileContents): string {
   return contents[key as string]
 }
 
@@ -311,25 +252,15 @@ function _write_file(file_data: string, full_path: string) {
 
 // todo: e2e
 // eslint-disable-next-line max-lines-per-function
-function _insert_to_file(
-  file_data: string,
-  full_path: string,
-) {
+function _insert_to_file(file_data: string, full_path: string) {
   const file_content = Deno.readTextFileSync(full_path)
-  Deno.writeTextFileSync(
-    full_path,
-    file_data + "\n" + file_content,
-    {
-      create: true,
-    },
-  )
+  Deno.writeTextFileSync(full_path, file_data + "\n" + file_content, {
+    create: true,
+  })
 }
 
 // todo: e2e do not insert if setup exist
-function _insert_into_styles(
-  filename: string,
-  data: string,
-) {
+function _insert_into_styles(filename: string, data: string) {
   for (const entry of walkSync(".", { maxDepth: 1 })) {
     if (["tailwind.config.js"].includes(entry.path)) return
   }

@@ -1,10 +1,6 @@
 /* eslint-disable max-lines-per-function */
-import {
-  assert,
-} from "https://deno.land/std/testing/asserts.ts"
-import { TextProtoReader } from "https://deno.land/std/textproto/mod.ts"
-import { BufReader } from "https://deno.land/std/io/mod.ts"
-import { readAll } from "https://deno.land/std/streams/mod.ts"
+import { assert } from "https://deno.land/std@0.121.0/testing/asserts.ts"
+import { readAll } from "https://deno.land/std@0.121.0/streams/mod.ts"
 
 const cli_flags = [
   "--allow-read",
@@ -23,7 +19,7 @@ let cli_command: Deno.Process<{
 }>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function execute(options:any, folder?:string) {
+function execute(options: any, folder?: string) {
   const cmd = [
     Deno.execPath(),
     "run",
@@ -131,10 +127,7 @@ Deno.test("do not allow tank to overwrite files.", async () => {
     assert(Deno.statSync(`${test_path}vite.config.js`).isFile)
     await execute(["vite"], test_dir)
     assertViteConfigs(test_path)
-    assertFileContains(
-      `${test_path}vite.config.js`,
-      "my vite config"
-    )
+    assertFileContains(`${test_path}vite.config.js`, "my vite config")
   } finally {
     rm_vite_configs({
       test_path,
@@ -144,16 +137,13 @@ Deno.test("do not allow tank to overwrite files.", async () => {
   }
 })
 
-// Deno.test("tank generate html block requires a name for a block.", async () => {
-//   await execute(["g", "--html"])
-//   try {
-//     await assertOutputIncludes("HTML component name required")
-//   } finally {
-//     killing_cli()
-//   }
-// })
+Deno.test("tank generate --html block requires a name.", async () => {
+  const command = ["g", "--html"]
+  const include = "\x1b[91mHTML component name required.\x1b[39m"
+  await assertStdErrContains(command, include)
+})
 
-Deno.test("tank can create a html block", async () => {
+Deno.test("tank --html appends create a block", async () => {
   const test_dir = "test_blocks_creation"
   const test_path = `e2e/${test_dir}/`
   await execute(["g", "--html", "sidebar"], test_dir)
@@ -167,16 +157,53 @@ Deno.test("tank can create a html block", async () => {
     )
   } finally {
     rm_path(`${test_path}blocks`)
+    Deno.writeTextFileSync(`${test_path}index.html`, `<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<body>
+    {% include "blocks/jamon.html" %}
+    <article>
+        <nav>
+            Jump to...
+            <ul>
+                <li><a href="#section-1">Section 1</a></li>
+                <li><a href="#section-2">Section 2</a></li>
+                <li><a href="#section-3">Section 3</a></li>
+                <li><a href="#section-4">Section 4</a></li>
+                <li><a href="#section-5">Section 5</a></li>
+            </ul>
+        </nav>
+    </article>
+</body></html>`)
     await killing_cli()
   }
 })
 
-function assertFileContains(test_path:string, patch:string) {
+async function assertStdErrContains(command: string[], include: string) {
+  const cmd = [Deno.execPath(), "run", ...cli_flags, "../tank.ts", ...command]
+  const p = Deno.run({ cmd, stdout: "piped", stderr: "piped", cwd: "./e2e" })
+  const status = await p.status()
+  const stderr = new TextDecoder().decode(await readAll(p.stderr))
+  p.close()
+  p.stderr.close()
+  p.stdout.close()
+  assert(!status.success)
+  assert(stderr.split("\n").includes(include))
+}
+
+function assertFileContains(test_path: string, patch: string) {
   const text = Deno.readTextFileSync(test_path)
   assert(text.includes(patch), `patch on ${test_path} not present.`)
 }
 
-function rm_vite_configs({ test_path, except = [] }: {test_path: string; except?: string[]}) {
+function rm_vite_configs({
+  test_path,
+  except = [],
+}: {
+  test_path: string;
+  except?: string[];
+}) {
   const files = [
     "public",
     "main.js",
@@ -189,7 +216,7 @@ function rm_vite_configs({ test_path, except = [] }: {test_path: string; except?
     "__tank__",
   ]
 
-  const filtered_files = files.filter((file:string) => !except.includes(file))
+  const filtered_files = files.filter((file: string) => !except.includes(file))
 
   for (const file of filtered_files) {
     rm_path(`${test_path}${file}`)
@@ -200,7 +227,7 @@ function rm_path(file: string) {
   Deno.removeSync(file, { recursive: true })
 }
 
-function assertBaseConfig(test_path:string) {
+function assertBaseConfig(test_path: string) {
   assert(Deno.statSync(test_path).isDirectory, `${test_path} is not present.`)
   assert(
     Deno.statSync(`${test_path}images`).isDirectory,
@@ -222,7 +249,7 @@ function assertDep(test_path: string, dependency: string) {
   assert(text.includes(dependency), `${dependency} dependency is not present.`)
 }
 
-function assertViteConfigs(test_path:string) {
+function assertViteConfigs(test_path: string) {
   assert(
     Deno.statSync(`${test_path}public`).isDirectory,
     "public not present."
@@ -268,13 +295,4 @@ function assertViteConfigs(test_path:string) {
   assertDep(test_path, "vite-plugin-nunjucks")
   // assert(Deno.statSync(`${test_path}package-lock.json`).isFile);
   // assert(Deno.statSync(`${test_path}node_modules`).isDirectory);
-}
-
-async function assertOutputIncludes(text: string) {
-  assert(cli_command.stdout != null)
-
-  const r = new TextProtoReader(new BufReader(cli_command.stdout))
-  const s = await r.readLine()
-
-  assert(s !== null && s.includes(text), `${text} is not present.`)
 }
