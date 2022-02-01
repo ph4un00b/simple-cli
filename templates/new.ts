@@ -19,7 +19,9 @@ export type UnfancyFilesList = {
   "main.js": string;
 };
 
-export type FancyFiles = Array<"index.html" | "styles.css" | ".gitignore">;
+export type FancyFiles = Array<
+  "index.html" | "styles.css" | ".gitignore"
+>;
 export type UnfancyFiles = Array<
   | "main.js"
   | "postcss.config.js"
@@ -52,11 +54,13 @@ export type FileContents = {
   [key: string]: string;
 };
 
-type Templates = {
+type NewTemplate = {
   "no-bullshit": {
     directories: Array<"images">;
     unfancy_directories: Array<"public" | "__tank__">;
-    files: Array<"index.html" | "styles.css" | ".gitignore">;
+    files: Array<
+      "index.html" | "styles.css" | ".gitignore"
+    >;
     unfancy_files: Array<
       | "package.json"
       | "vite.config.js"
@@ -71,7 +75,7 @@ type Templates = {
     file_contents: FileContents;
   };
 };
-export const templates: Templates = {
+export const templates: NewTemplate = {
   "no-bullshit": {
     directories: ["images"],
     unfancy_directories: ["public", "__tank__"],
@@ -88,7 +92,8 @@ export const templates: Templates = {
       "__tank__/pages.js",
     ],
     file_contents: {
-      [TANK.pages_file]: `const { resolve, parse } = require("path");
+      [TANK.pages_file]:
+        `const { resolve, parse } = require("path");
 const glob = require("tiny-glob");
 const slug = require("slug");
 
@@ -134,7 +139,8 @@ function _main_full_path() {
     dirname: "src/html",
   },
 };`,
-      [TANK.plugins_file]: `const nunjucks = require("./nunjucks.plugin");
+      [TANK.plugins_file]:
+        `const nunjucks = require("./nunjucks.plugin");
 
 module.exports = async function (mode) {
   const { dev, prod } = await nunjucks();
@@ -233,7 +239,8 @@ function _api_name(path) {
     "vite-plugin-nunjucks": "0.1.10"
   }
 }`,
-      "vite.config.js": `import { defineConfig } from "vite";
+      "vite.config.js":
+        `import { defineConfig } from "vite";
 import plugins from "./__tank__/plugins";
 import pages from "./__tank__/pages";
 

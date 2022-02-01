@@ -1,1 +1,1 @@
-//import nunjucks from "vite-plugin-nunjucks";
+"my vite config"

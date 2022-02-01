@@ -1,14 +1,19 @@
 /* eslint-disable max-lines-per-function */
-import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts"
+import {
+  assert,
+  assertEquals,
+} from "https://deno.land/std/testing/asserts.ts"
 
 import { tank } from "./tank.ts"
 import { actionsMock as mock } from "./utils_dev.ts"
 Deno.test("tank can create a fancy blog", async () => {
-  await tank(mock).blog_handler({ name: "test" })
+  await tank(mock).new_handler({ name: "test" })
 
   try {
     assertEquals(mock.files({ call: 0 }).args.name, "test")
-    assertEquals(mock.directories({ call: 0 }).args, ["images"])
+    assertEquals(mock.directories({ call: 0 }).args, [
+      "images",
+    ])
     assertEquals(mock.files({ call: 0 }).args.files, [
       "index.html",
       "styles.css",
@@ -20,14 +25,16 @@ Deno.test("tank can create a fancy blog", async () => {
 })
 
 Deno.test("tank can create an unfancy blog", async () => {
-  await tank(mock).blog_handler({
+  await tank(mock).new_handler({
     name: "test",
     bs: true,
   })
 
   try {
     assertEquals(mock.files({ call: 0 }).args.name, "test")
-    assertEquals(mock.directories({ call: 0 }).args, ["images"])
+    assertEquals(mock.directories({ call: 0 }).args, [
+      "images",
+    ])
     assertEquals(mock.files({ call: 0 }).args.files, [
       "index.html",
       "styles.css",
@@ -45,12 +52,30 @@ Deno.test("tank can create an unfancy blog", async () => {
     })
 
     if (Deno.build.os === "windows") {
-      assertEquals(mock.executed({ call: 0 }).args, [ "cmd", "/c", "cd", "test", "&&", "cmd", "/c", "npm", "install" ])
+      assertEquals(mock.executed({ call: 0 }).args, [
+        "cmd",
+        "/c",
+        "cd",
+        "test",
+        "&&",
+        "cmd",
+        "/c",
+        "npm",
+        "install",
+      ])
     } else {
-      assertEquals(mock.executed({ call: 0 }).args, [ "cd", "test", "&&", "npm", "install" ])
+      assertEquals(mock.executed({ call: 0 }).args, [
+        "cd",
+        "test",
+        "&&",
+        "npm",
+        "install",
+      ])
     }
 
-    assertOutput("\nTry your fancy project: \x1b[92mcd test\x1b[39m!\n")
+    assertOutput(
+      "\nTry your fancy project: \x1b[92mcd test\x1b[39m!\n",
+    )
   } finally {
     mock.restore()
   }
@@ -73,9 +98,17 @@ Deno.test(
       })
 
       if (Deno.build.os === "windows") {
-        assertEquals(mock.executed({ call: 0 }).args, [ "cmd", "/c", "npm", "install" ])
+        assertEquals(mock.executed({ call: 0 }).args, [
+          "cmd",
+          "/c",
+          "npm",
+          "install",
+        ])
       } else {
-        assertEquals(mock.executed({ call: 0 }).args, [ "npm", "install" ])
+        assertEquals(mock.executed({ call: 0 }).args, [
+          "npm",
+          "install",
+        ])
       }
 
       assertOutput("\nTry \x1b[92mnpm run dev\x1b[39m!\n")
@@ -89,7 +122,10 @@ Deno.test("tank can create a html block", () => {
   tank(mock).generate_handler({ html: ["sidebar"] })
 
   try {
-    assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
+    assertEquals(
+      mock._create_dir({ call: 0 }).args,
+      "blocks",
+    )
 
     assertBlockFile({
       call: 0,
@@ -97,7 +133,10 @@ Deno.test("tank can create a html block", () => {
       content: "<h1>sidebar</h1>",
     })
 
-    assertAppend({ call: 0, content: "{% include \"blocks/sidebar.html\" %}" })
+    assertAppend({
+      call: 0,
+      content: "{% include \"blocks/sidebar.html\" %}",
+    })
   } finally {
     mock.restore()
   }
@@ -134,16 +173,30 @@ Deno.test("tank can create a data block", () => {
 })
 
 Deno.test("tank can create multiple data blocks at once", () => {
-  tank(mock).generate_handler({ data: ["list1", "sections"] })
+  tank(mock).generate_handler({
+    data: ["list1", "sections"],
+  })
 
   try {
-    assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
+    assertEquals(
+      mock._create_dir({ call: 0 }).args,
+      "blocks",
+    )
     assertDataBlock({ call: 0, name: "list1" })
-    assertAppend({ call: 0, content: "{% include \"blocks/list1.html\" %}" })
+    assertAppend({
+      call: 0,
+      content: "{% include \"blocks/list1.html\" %}",
+    })
 
-    assertEquals(mock._create_dir({ call: 1 }).args, "blocks")
+    assertEquals(
+      mock._create_dir({ call: 1 }).args,
+      "blocks",
+    )
     assertDataBlock({ call: 2, name: "sections" })
-    assertAppend({ call: 1, content: "{% include \"blocks/sections.html\" %}" })
+    assertAppend({
+      call: 1,
+      content: "{% include \"blocks/sections.html\" %}",
+    })
   } finally {
     mock.restore()
   }
@@ -158,7 +211,10 @@ Deno.test("tank can create an api block", () => {
 
     assertApiBlock({ call, name })
 
-    assertAppend({ call, content: "{% include \"blocks/events.html\" %}" })
+    assertAppend({
+      call,
+      content: "{% include \"blocks/events.html\" %}",
+    })
   } finally {
     mock.restore()
   }
@@ -227,7 +283,9 @@ Deno.test("tank generator can slug fancy block names", () => {
     )
     mock.restore()
 
-    tank(mock).generate_handler({ data: ["fancy///title"] })
+    tank(mock).generate_handler({
+      data: ["fancy///title"],
+    })
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
       "blocks/fancytitle.html",
@@ -248,11 +306,20 @@ Deno.test("tank generator can slug fancy block names", () => {
 Deno.test("tank can create a single page", () => {
   tank(mock).pages_handler({ single: ["pricing"] })
   try {
-    assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
+    assertEquals(
+      mock._create_dir({ call: 0 }).args,
+      "blocks",
+    )
 
-    assertEquals(mock._create_block_file({ call: 0 }).calls.length, 1)
+    assertEquals(
+      mock._create_block_file({ call: 0 }).calls.length,
+      1,
+    )
 
-    assertEquals(mock._create_dir({ call: 1 }).args, "pricing")
+    assertEquals(
+      mock._create_dir({ call: 1 }).args,
+      "pricing",
+    )
 
     assertPageFile({
       call: 0,
@@ -308,7 +375,9 @@ Deno.test("tank can slug a page names", () => {
     )
     mock.restore()
 
-    tank(mock).pages_handler({ single: ["/-$-pricing-$-/"] })
+    tank(mock).pages_handler({
+      single: ["/-$-pricing-$-/"],
+    })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
       "pricing/index.html",
@@ -322,7 +391,9 @@ Deno.test("tank can slug a page names", () => {
     )
     mock.restore()
 
-    tank(mock).pages_handler({ single: ["\\ev\\\\\\ents\\"] })
+    tank(mock).pages_handler({
+      single: ["\\ev\\\\\\ents\\"],
+    })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
       "events/index.html",
@@ -334,7 +405,9 @@ Deno.test("tank can slug a page names", () => {
 
 Deno.test("tank can handle a page names with sub-directories", () => {
   try {
-    tank(mock).pages_handler({ single: ["landing-page/my/subfolder/page"] })
+    tank(mock).pages_handler({
+      single: ["landing-page/my/subfolder/page"],
+    })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
       "landing-page/my/subfolder/page/index.html",
@@ -346,7 +419,9 @@ Deno.test("tank can handle a page names with sub-directories", () => {
 
 Deno.test("tank can handle a page names with Windows slashes \\.", () => {
   try {
-    tank(mock).pages_handler({ single: ["landing-page\\my\\subfolder\\page"] })
+    tank(mock).pages_handler({
+      single: ["landing-page\\my\\subfolder\\page"],
+    })
     assertEquals(
       mock._create_page_file({ call: 0 }).args[0],
       "landing-page/my/subfolder/page/index.html",
@@ -360,7 +435,8 @@ Deno.test("tank can create a multiple page creator files.", () => {
   try {
     tank(mock).pages_handler({ multiple: ["money"] })
 
-    const money_page = `export const layout = "layouts/money.pages.html";
+    const money_page =
+      `export const layout = "layouts/money.pages.html";
 // export const renderOrder = 0; // default
 
 export default async function* () {
@@ -412,7 +488,8 @@ export default async function* () {
 
 </html>`
 
-    const paginator_file = `export const title = "money pages";
+    const paginator_file =
+      `export const title = "money pages";
 export const global_text = "Have nice day :) !";
 export const layout = "layouts/paginator.pages.html";
 
@@ -520,21 +597,24 @@ export default function* ({ search, paginate }) {
 
 </html>`
 
-    const css_indice_file = `export const url = "./money/page/styles.css";
+    const css_indice_file =
+      `export const url = "./money/page/styles.css";
 
 export default () =>
   \`@tailwind base;
 @tailwind components;
 @tailwind utilities;\`;`
 
-    const css_pages_file = `export const url = "./money/styles.css";
+    const css_pages_file =
+      `export const url = "./money/styles.css";
 
 export default () =>
   \`@tailwind base;
 @tailwind components;
 @tailwind utilities;\`;`
 
-    const js_pages_file = `export const url = "./money/main.js";
+    const js_pages_file =
+      `export const url = "./money/main.js";
 
 export default () =>
   \`import "./styles.css";
@@ -542,7 +622,8 @@ export default () =>
 // add all your js content...
 console.log("money page!")\`;`
 
-    const js_indice_file = `export const url = "./money/page/main.js";
+    const js_indice_file =
+      `export const url = "./money/page/main.js";
 
 export default () =>
   \`import "./styles.css";
@@ -561,14 +642,20 @@ console.log("money indice!")\`;`
       content: money_layout,
     })
 
-    assertEquals(mock._create_dir({ call: 0 }).args, "blocks/layouts")
+    assertEquals(
+      mock._create_dir({ call: 0 }).args,
+      "blocks/layouts",
+    )
 
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
       "blocks/pages_title.macro.html",
     )
 
-    assertEquals(mock._insert_content({ call: 0 }).args, undefined)
+    assertEquals(
+      mock._insert_content({ call: 0 }).args,
+      undefined,
+    )
 
     assertPageFile({
       file: "money.api.indice.js",
@@ -612,20 +699,28 @@ console.log("money indice!")\`;`
 
 Deno.test("tank can slug a --multiple names", () => {
   try {
-    tank(mock).pages_handler({ multiple: ["landing-page"] })
+    tank(mock).pages_handler({
+      multiple: ["landing-page"],
+    })
 
     assertMultiplePageFileNames("landing-page")
     mock.restore()
 
-    tank(mock).pages_handler({ multiple: ["/-$-pricing-$-/"] })
+    tank(mock).pages_handler({
+      multiple: ["/-$-pricing-$-/"],
+    })
     assertMultiplePageFileNames("pricing")
     mock.restore()
 
-    tank(mock).pages_handler({ multiple: ["//eve///nts//"] })
+    tank(mock).pages_handler({
+      multiple: ["//eve///nts//"],
+    })
     assertMultiplePageFileNames("eve-nts")
     mock.restore()
 
-    tank(mock).pages_handler({ multiple: ["\\ev\\\\\\ents\\"] })
+    tank(mock).pages_handler({
+      multiple: ["\\ev\\\\\\ents\\"],
+    })
     assertMultiplePageFileNames("ev-ents")
   } finally {
     mock.restore()
@@ -634,8 +729,12 @@ Deno.test("tank can slug a --multiple names", () => {
 
 Deno.test("tank can handle a --multiple names with sub-directories", () => {
   try {
-    tank(mock).pages_handler({ multiple: ["landing-page/my/subfolder/page"] })
-    assertMultiplePageFileNames("landing-page-my-subfolder-page")
+    tank(mock).pages_handler({
+      multiple: ["landing-page/my/subfolder/page"],
+    })
+    assertMultiplePageFileNames(
+      "landing-page-my-subfolder-page",
+    )
   } finally {
     mock.restore()
   }
@@ -646,7 +745,9 @@ Deno.test("tank can handle a --multiple names with Windows slashes \\.", () => {
     tank(mock).pages_handler({
       multiple: ["landing-page\\my\\subfolder\\page"],
     })
-    assertMultiplePageFileNames("landing-page-my-subfolder-page")
+    assertMultiplePageFileNames(
+      "landing-page-my-subfolder-page",
+    )
   } finally {
     mock.restore()
   }
@@ -716,8 +817,14 @@ function assertPageFile({
   call: number;
   content: string;
 }) {
-  assertEquals(mock._create_page_file({ call }).args[0], file)
-  assertEquals(mock._create_page_file({ call }).args[1], content)
+  assertEquals(
+    mock._create_page_file({ call }).args[0],
+    file,
+  )
+  assertEquals(
+    mock._create_page_file({ call }).args[1],
+    content,
+  )
 }
 
 function assertBlockFile({
@@ -729,8 +836,14 @@ function assertBlockFile({
   call: number;
   content: string;
 }) {
-  assertEquals(mock._create_block_file({ call }).args[0], file)
-  assertEquals(mock._create_block_file({ call }).args[1], content)
+  assertEquals(
+    mock._create_block_file({ call }).args[0],
+    file,
+  )
+  assertEquals(
+    mock._create_block_file({ call }).args[1],
+    content,
+  )
 }
 
 function assertAppend({
@@ -747,12 +860,23 @@ function assertAppend({
   assertEquals(index, file)
 }
 
-function assertApiBlock({ call, name }: { call: number; name: string }) {
-  const [file, content] = mock._create_block_file({ call }).args
-  assertEquals(file, `blocks/${name}.html`, `${name}.html not created.`)
-  assert(content.split("\n").includes(`    ${name} api block`), content)
+function assertApiBlock(
+  { call, name }: { call: number; name: string },
+) {
+  const [file, content] =
+    mock._create_block_file({ call }).args
+  assertEquals(
+    file,
+    `blocks/${name}.html`,
+    `${name}.html not created.`,
+  )
+  assert(
+    content.split("\n").includes(`    ${name} api block`),
+    content,
+  )
 
-  const [file2, content2] = mock._create_block_file({ call: call + 1 }).args
+  const [file2, content2] =
+    mock._create_block_file({ call: call + 1 }).args
   assertEquals(
     file2,
     `blocks/${name}.api.dev.js`,
@@ -767,7 +891,8 @@ function assertApiBlock({ call, name }: { call: number; name: string }) {
     content2,
   )
 
-  const [file3, content3] = mock._create_block_file({ call: call + 2 }).args
+  const [file3, content3] =
+    mock._create_block_file({ call: call + 2 }).args
   assert(
     content3
       .split("\n")
@@ -783,12 +908,23 @@ function assertApiBlock({ call, name }: { call: number; name: string }) {
   )
 }
 
-function assertDataBlock({ call, name }: { call: number; name: string }) {
-  const [file, content] = mock._create_block_file({ call }).args
-  assertEquals(file, `blocks/${name}.html`, `${name}.html not created.`)
-  assert(content.split("\n").includes(`        ${name} block`), content)
+function assertDataBlock(
+  { call, name }: { call: number; name: string },
+) {
+  const [file, content] =
+    mock._create_block_file({ call }).args
+  assertEquals(
+    file,
+    `blocks/${name}.html`,
+    `${name}.html not created.`,
+  )
+  assert(
+    content.split("\n").includes(`        ${name} block`),
+    content,
+  )
 
-  const [file2, content2] = mock._create_block_file({ call: call + 1 }).args
+  const [file2, content2] =
+    mock._create_block_file({ call: call + 1 }).args
   assertEquals(
     file2,
     `blocks/${name}.data.json`,
@@ -810,13 +946,19 @@ function assertOutput(text: string) {
   assertEquals(mock.logged({ call: 0 }).args, text)
 }
 
-function assertHTMLBlock({ call, name }: { call: number; name: string }) {
-  const [file, content] = mock._create_block_file({ call }).args
+function assertHTMLBlock(
+  { call, name }: { call: number; name: string },
+) {
+  const [file, content] =
+    mock._create_block_file({ call }).args
   assertEquals(mock._create_dir({ call }).args, "blocks")
   assertEquals(file, `blocks/${name}.html`)
   assert(content.split("\n").includes(`<h1>${name}</h1>`))
 
-  assertAppend({ call, content: "{% include \"blocks/" + name + ".html\" %}" })
+  assertAppend({
+    call,
+    content: "{% include \"blocks/" + name + ".html\" %}",
+  })
 }
 
 function assertViteConfigs({
@@ -827,7 +969,10 @@ function assertViteConfigs({
   folder?: string;
 }) {
   assertEquals(mock.files({ call }).args.name, folder)
-  assertEquals(mock.directories({ call }).args, ["public", "__tank__"])
+  assertEquals(mock.directories({ call }).args, [
+    "public",
+    "__tank__",
+  ])
   assertEquals(mock.files({ call }).args.files, [
     "package.json",
     "vite.config.js",

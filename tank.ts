@@ -1,6 +1,5 @@
 import yargs from "https://deno.land/x/yargs/deno.ts"
 import {
-  brightCyan,
   brightGreen,
   brightRed,
 } from "https://deno.land/std@0.121.0/fmt/colors.ts"
@@ -12,7 +11,7 @@ import {
   HTTPArguments,
   options,
   templates,
-} from "./templates/blog.ts"
+} from "./templates/new.ts"
 
 import { Actions, actions } from "./actions.ts"
 import { YargsInstance } from "https://deno.land/x/yargs@v17.3.1-deno/build/lib/yargs-factory.js"
@@ -25,7 +24,7 @@ import { parse } from "https://deno.land/std@0.121.0/path/mod.ts"
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {}
 
-type BlogContent = {
+type ProjectContent = {
   directories: string[];
   files: FancyFiles;
   file_contents: FileContents;
@@ -61,7 +60,9 @@ export function tank(spec: Actions) {
       multiple?.forEach((name) => {
         slug.charmap["/"] = "-"
         slug.charmap["\\"] = "-"
-        name = slug(name, { remove: /^\/*|\/*$|[/*]{2,}/g })
+        name = slug(name, {
+          remove: /^\/*|\/*$|[/*]{2,}/g,
+        })
 
         const pages_creator =
           `export const layout = "layouts/${name}.pages.html";
@@ -116,7 +117,8 @@ export default async function* () {
 
 </html>`
 
-        const paginator_file = `export const title = "${name} pages";
+        const paginator_file =
+          `export const title = "${name} pages";
 export const global_text = "Have nice day :) !";
 export const layout = "layouts/paginator.pages.html";
 
@@ -224,21 +226,24 @@ export default function* ({ search, paginate }) {
 
 </html>`
 
-        const css_indice_file = `export const url = "./${name}/page/styles.css";
+        const css_indice_file =
+          `export const url = "./${name}/page/styles.css";
 
 export default () =>
   \`@tailwind base;
 @tailwind components;
 @tailwind utilities;\`;`
 
-        const css_page_file = `export const url = "./${name}/styles.css";
+        const css_page_file =
+          `export const url = "./${name}/styles.css";
 
 export default () =>
   \`@tailwind base;
 @tailwind components;
 @tailwind utilities;\`;`
 
-        const js_pages_file = `export const url = "./${name}/main.js";
+        const js_pages_file =
+          `export const url = "./${name}/main.js";
 
 export default () =>
   \`import "./styles.css";
@@ -246,7 +251,8 @@ export default () =>
 // add all your js content...
 console.log("${name} page!")\`;`
 
-        const js_indice_file = `export const url = "./${name}/page/main.js";
+        const js_indice_file =
+          `export const url = "./${name}/page/main.js";
 
 export default () =>
   \`import "./styles.css";
@@ -254,19 +260,40 @@ export default () =>
 // add all your js content...
 console.log("${name} indice!")\`;`
 
-        create_page_file(`${name}.api.pages.js`, pages_creator)
+        create_page_file(
+          `${name}.api.pages.js`,
+          pages_creator,
+        )
         create_dir("blocks/layouts")
-        create_page_file(`blocks/layouts/${name}.pages.html`, pages_layout)
+        create_page_file(
+          `blocks/layouts/${name}.pages.html`,
+          pages_layout,
+        )
         create_macro_block("pages_title", false)
-        create_page_file(`${name}.api.indice.js`, paginator_file)
+        create_page_file(
+          `${name}.api.indice.js`,
+          paginator_file,
+        )
         create_page_file(
           "blocks/layouts/paginator.pages.html",
           paginator_layout,
         )
-        create_page_file(`${name}.css.indice.js`, css_indice_file)
-        create_page_file(`${name}.css.pages.js`, css_page_file)
-        create_page_file(`${name}.js.indice.js`, js_indice_file)
-        create_page_file(`${name}.js.pages.js`, js_pages_file)
+        create_page_file(
+          `${name}.css.indice.js`,
+          css_indice_file,
+        )
+        create_page_file(
+          `${name}.css.pages.js`,
+          css_page_file,
+        )
+        create_page_file(
+          `${name}.js.indice.js`,
+          js_indice_file,
+        )
+        create_page_file(
+          `${name}.js.pages.js`,
+          js_pages_file,
+        )
       })
     }
 
@@ -277,7 +304,9 @@ console.log("${name} indice!")\`;`
         slug.charmap["-"] = "-"
         slug.charmap["/"] = "/"
         slug.charmap["\\"] = "/"
-        page_name = slug(page_name, { remove: /^\/*|\/*$|[/*]{2,}/g })
+        page_name = slug(page_name, {
+          remove: /^\/*|\/*$|[/*]{2,}/g,
+        })
 
         create_dir(page_name)
         create_page_file(
@@ -331,16 +360,24 @@ console.log("${page_name}!!!")`,
   ) {
     slug.charmap["-"] = "_"
     if (_not_empty(html)) {
-      html?.forEach((blockname) => create_html_block(slug(blockname, "_")))
+      html?.forEach((blockname) =>
+        create_html_block(slug(blockname, "_"))
+      )
     }
     if (_not_empty(data)) {
-      data?.forEach((blockname) => create_data_block(slug(blockname, "_")))
+      data?.forEach((blockname) =>
+        create_data_block(slug(blockname, "_"))
+      )
     }
     if (_not_empty(api)) {
-      api?.forEach((blockname) => create_api_block(slug(blockname, "_")))
+      api?.forEach((blockname) =>
+        create_api_block(slug(blockname, "_"))
+      )
     }
     if (_not_empty(macro)) {
-      macro?.forEach((blockname) => create_macro_block(slug(blockname, "_")))
+      macro?.forEach((blockname) =>
+        create_macro_block(slug(blockname, "_"))
+      )
     }
   }
 
@@ -449,7 +486,8 @@ module.exports = async function () {
 };`,
     )
 
-    const block = "{% include \"blocks/" + name + ".html" + "\" %}"
+    const block = "{% include \"blocks/" + name + ".html" +
+      "\" %}"
     insert_content(block, "index.html")
   }
 
@@ -457,8 +495,8 @@ module.exports = async function () {
     await add_vite({})
   }
 
-  async function blog_handler({ bs, name }: Arguments) {
-    if (name) create_blog("no-bullshit", name)
+  async function new_handler({ bs, name }: Arguments) {
+    if (name) new_project("no-bullshit", name)
     if (!bs) return
     await add_vite({ for_project: name })
   }
@@ -486,7 +524,12 @@ module.exports = async function () {
         // todo: pr docs enhancement
         modules: {
           extensions: {
-            pages: [".indice.js", ".pages.js", ".pages.ts", ".pages.md"],
+            pages: [
+              ".indice.js",
+              ".pages.js",
+              ".pages.ts",
+              ".pages.md",
+            ],
             data: [".pages.js", ".pages.ts"],
             components: [".pages.js", ".pages.ts"],
           },
@@ -510,6 +553,7 @@ module.exports = async function () {
 
     site.use(slugify_urls())
 
+    // eslint-disable-next-line max-lines-per-function
     site.addEventListener("afterBuild", ({ pages }) => {
       if (!pages) return
       if (pages.length === 0) return
@@ -521,7 +565,9 @@ module.exports = async function () {
       site.run("deleting-folders")
 
       const millis = Date.now() - start
-      stdOut(brightGreen(`took: ${Math.floor(millis)} ms.`))
+      stdOut(
+        brightGreen(`took: ${Math.floor(millis)} ms.`),
+      )
     })
 
     // eslint-disable-next-line max-lines-per-function
@@ -550,7 +596,9 @@ module.exports = async function () {
       return parse(path).dir.split("/")[1]
     }
 
-    await site.ignore("blocks").ignore("src").ignore("public").ignore("dist")
+    await site.ignore("blocks").ignore("src").ignore(
+      "public",
+    ).ignore("dist")
       .build()
   }
 
@@ -560,8 +608,12 @@ module.exports = async function () {
 
   function create_html_block(name: string) {
     create_dir("blocks")
-    create_block_file(`blocks/${name}.html`, `<h1>${name}</h1>`)
-    const block = "{% include \"blocks/" + name + ".html" + "\" %}"
+    create_block_file(
+      `blocks/${name}.html`,
+      `<h1>${name}</h1>`,
+    )
+    const block = "{% include \"blocks/" + name + ".html" +
+      "\" %}"
     insert_content(block, "index.html")
   }
 
@@ -610,7 +662,8 @@ module.exports = async function () {
         2,
       ),
     )
-    const block = "{% include \"blocks/" + name + ".html" + "\" %}"
+    const block = "{% include \"blocks/" + name + ".html" +
+      "\" %}"
     insert_content(block, "index.html")
   }
 
@@ -642,20 +695,28 @@ module.exports = async function () {
     await exec(_npm_install_for_windows(name))
 
     name
-      ? stdOut(`\nTry cd ${name} && ${brightGreen("npm run dev")}!\n`)
+      ? stdOut(
+        `\nTry cd ${name} && ${
+          brightGreen("npm run dev")
+        }!\n`,
+      )
       : stdOut(`\nTry ${brightGreen("npm run dev")}!\n`)
   }
 
-  function create_blog(project: options, name: string) {
+  // eslint-disable-next-line max-lines-per-function
+  function new_project(project: options, name: string) {
     const {
       directories,
       files,
       file_contents: contents,
-    }: BlogContent = templates[selected()]
+    }: ProjectContent = templates[selected()]
 
     create_directories(directories, name)
     create_files({ files, name, contents })
-    stdOut("\nTry your fancy project: " + brightGreen(`cd ${name}`) + "!\n")
+    stdOut(
+      "\nTry your fancy project: " +
+        brightGreen(`cd ${name}`) + "!\n",
+    )
   }
 
   return {
@@ -663,7 +724,7 @@ module.exports = async function () {
     generate_handler,
     http_handler,
     vite_handler,
-    blog_handler,
+    new_handler,
   }
 }
 
@@ -677,7 +738,8 @@ const p_opt = {
 const HTTP = {
   command: "<http>",
   describe: "Simple HTTP Server.",
-  builder: (cli: YargsInstance) => cli.options({ "p": p_opt }),
+  builder: (cli: YargsInstance) =>
+    cli.options({ "p": p_opt }),
   handler: tank(actions).http_handler,
   example: ["tank http", "Simple HTTP Server."],
 }
@@ -695,20 +757,22 @@ const bs_opt = {
   type: "boolean",
 }
 
-const BLOG = {
-  command: "<blog>",
+const NEW = {
+  command: "<new>",
   describe: "Creates a new project.",
-  builder: (cli: YargsInstance) => cli.options({ "n": name_opt, "b": bs_opt }),
-  handler: tank(actions).blog_handler,
+  builder: (cli: YargsInstance) =>
+    cli.options({ "n": name_opt, "b": bs_opt }),
+  handler: tank(actions).new_handler,
   example: [
-    "tank blog --name my-blog --no-bs",
-    "Creates an unfancy blog project.",
+    "tank new -n my-site",
+    "Creates an unfancy new project.",
   ],
 }
 
 const VITE = {
   command: "<vite>",
-  describe: "Updates your project with Vite + Tailwind stuff.",
+  describe:
+    "Updates your project with Vite + Tailwind stuff.",
   builder: noop,
   handler: tank(actions).vite_handler,
   example: [
@@ -746,14 +810,13 @@ const html_opt = {
 
 const GENERATOR = {
   command: "<g>",
-  describe: `Generates a component. [${
-    brightCyan(
-      "--html sidebar footer, --data features, --api anime --macro title",
-    )
-  }]`,
-  builder: (cli: YargsInstance) => cli.options(html_opt).check(block_validator),
+  describe: "Generates a component. [ --html, --data, --api, --macro }]",
+  builder: (cli: YargsInstance) =>
+    cli.options(html_opt).check(block_validator),
   handler: tank(actions).generate_handler,
-  example: ["tank g --html sidebar footer --data features --api events"],
+  example: [
+    "tank g --html sidebar footer --data features --api events",
+  ],
 }
 
 const page_opt = {
@@ -771,27 +834,33 @@ const page_opt = {
   },
   "b": {
     alias: "build",
-    describe: "Build pages for the --multiple creator files in your project.",
+    describe:
+      "Build pages for the --multiple creator files in your project.",
     type: "boolean",
   },
 }
 
 const PAGE = {
   command: "<p>",
-  describe: "Generates new pages. [--single --multiple --build]",
+  describe:
+    "Generates new pages. [--single --multiple --build]",
   // eslint-disable-next-line max-lines-per-function
   builder: (cli: YargsInstance) =>
     cli.options(page_opt).check(
       // eslint-disable-next-line max-lines-per-function
-      function ({ s, m, b }: { s: string[]; m: string[]; b: boolean }) {
+      function ({ s, m }: { s: string[]; m: string[] }) {
         // todo: e2e
         if (_not_empty_option(s)) {
-          throw new Error(brightRed("Single page path name required."))
+          throw new Error(
+            brightRed("Single page path name required."),
+          )
         }
 
         // todo: e2e
         if (_not_empty_option(m)) {
-          throw new Error(brightRed("Multiple page path name required."))
+          throw new Error(
+            brightRed("Multiple page path name required."),
+          )
         }
 
         return true
@@ -810,7 +879,17 @@ function _not_empty(block: string[] | undefined) {
 function _npm_install_for_windows(name?: string): string[] {
   if (Deno.build.os === "windows") {
     return name
-      ? [ "cmd", "/c", "cd", name, "&&", "cmd", "/c", "npm", "install" ]
+      ? [
+        "cmd",
+        "/c",
+        "cd",
+        name,
+        "&&",
+        "cmd",
+        "/c",
+        "npm",
+        "install",
+      ]
       : ["cmd", "/c", "npm", "install"]
   }
 
@@ -821,25 +900,38 @@ function _npm_install_for_windows(name?: string): string[] {
 
 // eslint-disable-next-line max-lines-per-function
 function block_validator(
-  { h, d, a, m }: { h: string[]; d: string[]; a: string[]; m: string[] },
+  { h, d, a, m }: {
+    h: string[];
+    d: string[];
+    a: string[];
+    m: string[];
+  },
 ): true {
   if (_not_empty_option(h)) {
-    throw new Error(brightRed("HTML component name required."))
+    throw new Error(
+      brightRed("HTML component name required."),
+    )
   }
 
   // TODO: e2e test
   if (_not_empty_option(d)) {
-    throw new Error(brightRed("Data component name required."))
+    throw new Error(
+      brightRed("Data component name required."),
+    )
   }
 
   // TODO: e2e test
   if (_not_empty_option(a)) {
-    throw new Error(brightRed("API component name required."))
+    throw new Error(
+      brightRed("API component name required."),
+    )
   }
 
   // TODO: e2e test
   if (_not_empty_option(m)) {
-    throw new Error(brightRed("Macro component name required."))
+    throw new Error(
+      brightRed("Macro component name required."),
+    )
   }
   return true
 }
@@ -857,20 +949,16 @@ function selected(): options {
 
 if (import.meta.main) {
   yargs(Deno.args)
-    .epilogue(
-      "for more information, find our manual at http://example.com",
-    )
     .command(HTTP).example(...HTTP.example)
-    .command(BLOG).example(...BLOG.example)
+    .command(NEW).example(...NEW.example)
     .command(VITE).example(...VITE.example)
     .command(GENERATOR).example(...GENERATOR.example)
     .command(PAGE).example(...PAGE.example)
-    .example([
-      ["tank server-blocks --no-tests"],
-      ["tank add --layouts", "Create layouts"],
-    ])
+    .epilogue(
+      "for more information, find our manual at http://example.com",
+    )
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.13")
+    .version("0.8.0.14")
     .parse()
 }
