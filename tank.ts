@@ -866,12 +866,12 @@ const html_opt = {
   },
 }
 
-const GENERATOR = {
-  command: "<g>",
+const COMPONENTS = {
+  command: "<c>",
   describe: "Generates a component. [ --html, --data, --api, --macro ]",
   builder: (cli: YargsInstance) => cli.options(html_opt).check(block_validator),
   handler: tank(actions).generate_handler,
-  example: ["tank g --html sidebar footer --data features --api events"],
+  example: ["tank c --html sidebar footer --data features --api events"],
 }
 
 const page_opt = {
@@ -987,14 +987,14 @@ if (import.meta.main) {
     .example(...NEW.example)
     .command(VITE)
     .example(...VITE.example)
-    .command(GENERATOR)
-    .example(...GENERATOR.example)
+    .command(COMPONENTS)
+    .example(...COMPONENTS.example)
     .command(PAGE)
     .example(...PAGE.example)
-    .example("tank p --build", "Create/Rebuild multiple pages.")
-    .epilogue("for more information, find our manual at http://example.com")
+    .example(brightGreen("tank p --build"), "Create/Rebuild multiple pages.")
+    // .epilogue("for more information, find our manual at http://example.com")
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.32")
+    .version("0.8.0.33")
     .parse()
 }

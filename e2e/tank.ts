@@ -138,7 +138,7 @@ Deno.test("do not allow tank to overwrite files.", async () => {
 })
 
 Deno.test("tank generate --html block requires a name.", async () => {
-  const command = ["g", "--html"]
+  const command = ["c", "--html"]
   const include = "\x1b[91mHTML component name required.\x1b[39m"
   await assertStdErrContains(command, include)
 })
@@ -146,7 +146,7 @@ Deno.test("tank generate --html block requires a name.", async () => {
 Deno.test("tank --html appends create a block", async () => {
   const test_dir = "test_blocks_creation"
   const test_path = `e2e/${test_dir}/`
-  await execute(["g", "--html", "sidebar"], test_dir)
+  await execute(["c", "--html", "sidebar"], test_dir)
 
   try {
     assert(Deno.statSync(`${test_path}blocks`).isDirectory)
