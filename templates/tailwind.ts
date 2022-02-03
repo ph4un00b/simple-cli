@@ -169,13 +169,23 @@ function NunjuckPlugin(globalData) {
 }
 
 async function ApiData({ for: kind }) {
-  const files = await _glob(_api_files(kind)).catch(console.error);
-  return await files.reduce(_promise_data, Promise.resolve({}));
+  try {
+    const files = await _glob(_api_files(kind));
+    return await files.reduce(_promise_data, Promise.resolve({}));
+  } catch (reason) {
+    console.log("Models: " + reason);
+    return [];
+  }
 }
 
 async function staticData() {
-  const files = await _glob(_data_files()).catch(console.error);
-  return files.reduce(_data, {});
+  try {
+    const files = await _glob(_data_files());
+    return files.reduce(_data, {});
+  } catch (reason) {
+    console.log("Models: " + reason);
+    return [];
+  }
 }
 
 async function _promise_data(promise_memo, path) {

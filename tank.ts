@@ -397,6 +397,8 @@ console.log("${page_name}!!!")`,
       `blocks/${name}.macro.html`,
       `<!-- https://mozilla.github.io/nunjucks/templating.html#macro -->
 
+<!-- Macros will be your reusable components with parameters. -->
+
 {% macro ${name}(text, transform = 'uppercase') %}
 
 <span class="text-3xl text-transparent {{transform}} bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">
@@ -411,7 +413,8 @@ console.log("${page_name}!!!")`,
     {{ text }}
 </span>
 
-{% endmacro %}`,
+{% endmacro %}
+`,
     )
 
     if (!insert) return
@@ -419,12 +422,10 @@ console.log("${page_name}!!!")`,
     insert_content(
       `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
 
-    <section
-        class="flex flex-col-reverse items-center space-y-2 font-bold transition duration-500 bg-gray-900 cursor-move hover:bg-violet-600 space">
-        {{ ${name}("reuse me!", "capitalize") }}
-        😁
-        {{ ${name}_green("Macro blocks") }}
-    </section>`,
+    <div> {{ ${name}("reuse me!", "capitalize") }} </div>
+
+    <div> {{ ${name}_green("Macro blocks") }} 😁</div>
+`,
       "index.html",
     )
   }
@@ -496,16 +497,27 @@ module.exports = async function () {
 ${name} api block
 </span>
 <section class="flex flex-col flex-wrap sm:flex-row">
-    <!-- items from *.model.{dev,prod}.js have a "_items" suffix -->
+
+    <!-- Items from *.model.{dev,prod}.js have a "_items" suffix. -->
     <!-- you can change the suffix in "__tank__/defaults.js" -->
+
+    <!-- For this special component, you will need to stop the local Vite server. -->
+    <!-- and re-run it!, $ npm run dev -->
+
+    <!-- This component, created two model files, one for development process. -->
+    <!-- one for your production model. yo can see the production output by running:  -->
+    <!-- $ npm run prod, then $ npm run preview -->
+
     {% for item in ${name}_items %}
     <article class="flex flex-col items-center justify-center w-full sm:w-1/4">
         <header>
             <picture class="flex justify-center p-3">
+
                 <!-- https://mozilla.github.io/nunjucks/templating.html#if-expression -->
                 <img class="w-40 h-40 p-0.5 rounded-3xl bg-clip-border bg-gradient-to-r from-pink-500 to-violet-500"
                     src="//www.{{ 'placecage' if loop.index % 2 else 'fillmurray' }}.com/g/{{ loop.index }}00/{{ loop.index }}00"
                     alt="random_image">
+
             </picture>
             <h3 class="pb-2 text-base text-center">
                 {{ item.character }}
@@ -680,11 +692,16 @@ ${name} api block
   </h1>
 
   <!-- https://mozilla.github.io/nunjucks/templating.html#dump -->
-  <!-- items from *.model.json have a "_items" suffix -->
+  <!-- Items from *.model.json have a "_items" suffix. -->
   <!-- you can change the suffix in "__tank__/defaults.js" -->
+
+  <!-- For this special component, you will need to stop the local Vite server. -->
+  <!-- and re-run it!, $ npm run dev -->
+
   <section>
       <details>
           <summary class="pl-3 font-mono text-xl ">
+              <!-- Special filters provided by Nunjucks. -->
               {{ ${name}_items | dump | truncate(20) }}
           </summary>
 
@@ -978,6 +995,6 @@ if (import.meta.main) {
     .epilogue("for more information, find our manual at http://example.com")
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.31")
+    .version("0.8.0.32")
     .parse()
 }

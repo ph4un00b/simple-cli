@@ -224,6 +224,8 @@ Deno.test("tank can create a macro block", () => {
       content:
         `<!-- https://mozilla.github.io/nunjucks/templating.html#macro -->
 
+<!-- Macros will be your reusable components with parameters. -->
+
 {% macro title(text, transform = 'uppercase') %}
 
 <span class="text-3xl text-transparent {{transform}} bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">
@@ -238,7 +240,8 @@ Deno.test("tank can create a macro block", () => {
     {{ text }}
 </span>
 
-{% endmacro %}`,
+{% endmacro %}
+`,
     })
 
     assertAppend({
@@ -246,12 +249,10 @@ Deno.test("tank can create a macro block", () => {
       content:
         `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
 
-    <section
-        class="flex flex-col-reverse items-center space-y-2 font-bold transition duration-500 bg-gray-900 cursor-move hover:bg-violet-600 space">
-        {{ ${name}("reuse me!", "capitalize") }}
-        😁
-        {{ ${name}_green("Macro blocks") }}
-    </section>`,
+    <div> {{ ${name}("reuse me!", "capitalize") }} </div>
+
+    <div> {{ ${name}_green("Macro blocks") }} 😁</div>
+`,
     })
   } finally {
     mock.restore()
@@ -299,8 +300,11 @@ Deno.test("tank can create a single page", () => {
   try {
     assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
 
-    assertEquals(mock._create_block_file({ call: 0 }).args[0], "blocks/titles.macro.html")
-    assertEquals(mock._insert_content({call: 0}).calls.length, 0)
+    assertEquals(
+      mock._create_block_file({ call: 0 }).args[0],
+      "blocks/titles.macro.html",
+    )
+    assertEquals(mock._insert_content({ call: 0 }).calls.length, 0)
     assertEquals(mock._create_dir({ call: 1 }).args, "pricing")
 
     assertPageFile({
@@ -417,8 +421,7 @@ Deno.test("tank can create a multiple page creator files.", () => {
   try {
     tank(mock).pages_handler({ multiple: ["money"] })
     const name = "money"
-    const pages_creator =
-          `// the layout to be used for all the pages.
+    const pages_creator = `// the layout to be used for all the pages.
 export const layout = "layouts/${name}.pages.html";
 // export const renderOrder = 0; //  default is "0"
 
@@ -480,7 +483,8 @@ export default async function* () {
 
 </html>`
 
-    const paginator_file = `export const layout = "layouts/paginator.pages.html";
+    const paginator_file =
+      `export const layout = "layouts/paginator.pages.html";
 // Changed this to "1"
 // in order to create all paginated pages
 // then will be able to fetch the pages by tag.
@@ -627,18 +631,51 @@ console.log("money indice!")\`;`
     assertEquals(mock._create_dir({ call: 1 }).args, "indice_makers")
     assertEquals(mock._create_dir({ call: 2 }).args, "page_makers")
 
-    assertEquals( mock._create_block_file({ call: 0 }).args[0], "blocks/pages_title.macro.html",)
+    assertEquals(
+      mock._create_block_file({ call: 0 }).args[0],
+      "blocks/pages_title.macro.html",
+    )
     assertEquals(mock._insert_content({ call: 0 }).args, undefined)
-    assertPageFile({ file: "blocks/layouts/money.pages.html", call: 0, content: money_layout, })
-    assertPageFile({ file: "blocks/layouts/paginator.pages.html", call: 1, content: paginator_layout, })
-    assertPageFile({ file: "indice_makers/money.api.indice.js", call: 2, content: paginator_file, })
-    assertPageFile({ file: "indice_makers/money.css.indice.js", call: 3, content: css_indice_file, })
-    assertPageFile({ file: "indice_makers/money.js.indice.js", call: 4, content: js_indice_file, })
-    assertPageFile({ file: "page_makers/money.api.pages.js", call: 5, content: pages_creator, })
-    assertPageFile({ file: "page_makers/money.css.pages.js", call: 6, content: css_pages_file, })
-    assertPageFile({ file: "page_makers/money.js.pages.js", call: 7, content: js_pages_file, })
-
-
+    assertPageFile({
+      file: "blocks/layouts/money.pages.html",
+      call: 0,
+      content: money_layout,
+    })
+    assertPageFile({
+      file: "blocks/layouts/paginator.pages.html",
+      call: 1,
+      content: paginator_layout,
+    })
+    assertPageFile({
+      file: "indice_makers/money.api.indice.js",
+      call: 2,
+      content: paginator_file,
+    })
+    assertPageFile({
+      file: "indice_makers/money.css.indice.js",
+      call: 3,
+      content: css_indice_file,
+    })
+    assertPageFile({
+      file: "indice_makers/money.js.indice.js",
+      call: 4,
+      content: js_indice_file,
+    })
+    assertPageFile({
+      file: "page_makers/money.api.pages.js",
+      call: 5,
+      content: pages_creator,
+    })
+    assertPageFile({
+      file: "page_makers/money.css.pages.js",
+      call: 6,
+      content: css_pages_file,
+    })
+    assertPageFile({
+      file: "page_makers/money.js.pages.js",
+      call: 7,
+      content: js_pages_file,
+    })
   } finally {
     mock.restore()
   }
@@ -716,15 +753,41 @@ Deno.test({
   },
 })
 
+// todo: test when node.js is no installed bc npm will be absente.
+
 function assertMultiplePageFileNames(name: string) {
-  assertEquals( mock._create_page_file({ call: 0 }).args[0], `blocks/layouts/${name}.pages.html`,)
-  assertEquals( mock._create_page_file({ call: 1 }).args[0], "blocks/layouts/paginator.pages.html",)
-  assertEquals( mock._create_page_file({ call: 2 }).args[0], `indice_makers/${name}.api.indice.js`,)
-  assertEquals( mock._create_page_file({ call: 3 }).args[0], `indice_makers/${name}.css.indice.js`,)
-  assertEquals( mock._create_page_file({ call: 4 }).args[0], `indice_makers/${name}.js.indice.js`,)
-  assertEquals( mock._create_page_file({ call: 5 }).args[0], `page_makers/${name}.api.pages.js`,)
-  assertEquals( mock._create_page_file({ call: 6 }).args[0], `page_makers/${name}.css.pages.js`,)
-  assertEquals( mock._create_page_file({ call: 7 }).args[0], `page_makers/${name}.js.pages.js`,)
+  assertEquals(
+    mock._create_page_file({ call: 0 }).args[0],
+    `blocks/layouts/${name}.pages.html`,
+  )
+  assertEquals(
+    mock._create_page_file({ call: 1 }).args[0],
+    "blocks/layouts/paginator.pages.html",
+  )
+  assertEquals(
+    mock._create_page_file({ call: 2 }).args[0],
+    `indice_makers/${name}.api.indice.js`,
+  )
+  assertEquals(
+    mock._create_page_file({ call: 3 }).args[0],
+    `indice_makers/${name}.css.indice.js`,
+  )
+  assertEquals(
+    mock._create_page_file({ call: 4 }).args[0],
+    `indice_makers/${name}.js.indice.js`,
+  )
+  assertEquals(
+    mock._create_page_file({ call: 5 }).args[0],
+    `page_makers/${name}.api.pages.js`,
+  )
+  assertEquals(
+    mock._create_page_file({ call: 6 }).args[0],
+    `page_makers/${name}.css.pages.js`,
+  )
+  assertEquals(
+    mock._create_page_file({ call: 7 }).args[0],
+    `page_makers/${name}.js.pages.js`,
+  )
 }
 
 function assertPageFile({
@@ -833,16 +896,27 @@ module.exports = async function () {
 ${name} api block
 </span>
 <section class="flex flex-col flex-wrap sm:flex-row">
-    <!-- items from *.model.{dev,prod}.js have a "_items" suffix -->
+
+    <!-- Items from *.model.{dev,prod}.js have a "_items" suffix. -->
     <!-- you can change the suffix in "__tank__/defaults.js" -->
+
+    <!-- For this special component, you will need to stop the local Vite server. -->
+    <!-- and re-run it!, $ npm run dev -->
+
+    <!-- This component, created two model files, one for development process. -->
+    <!-- one for your production model. yo can see the production output by running:  -->
+    <!-- $ npm run prod, then $ npm run preview -->
+
     {% for item in ${name}_items %}
     <article class="flex flex-col items-center justify-center w-full sm:w-1/4">
         <header>
             <picture class="flex justify-center p-3">
+
                 <!-- https://mozilla.github.io/nunjucks/templating.html#if-expression -->
                 <img class="w-40 h-40 p-0.5 rounded-3xl bg-clip-border bg-gradient-to-r from-pink-500 to-violet-500"
                     src="//www.{{ 'placecage' if loop.index % 2 else 'fillmurray' }}.com/g/{{ loop.index }}00/{{ loop.index }}00"
                     alt="random_image">
+
             </picture>
             <h3 class="pb-2 text-base text-center">
                 {{ item.character }}
@@ -881,17 +955,24 @@ ${name} api block
 function assertDataBlock({ call, name }: { call: number; name: string }) {
   const [file, content] = mock._create_block_file({ call }).args
   assertEquals(file, `blocks/${name}.html`, `${name}.html not created.`)
-  assertEquals(content, `<article class="flex flex-col items-center antialiased bg-rose-500 text-gray-50">
+  assertEquals(
+    content,
+    `<article class="flex flex-col items-center antialiased bg-rose-500 text-gray-50">
   <h1 class="text-4xl font-extralight">
     ${name} block
   </h1>
 
   <!-- https://mozilla.github.io/nunjucks/templating.html#dump -->
-  <!-- items from *.model.json have a "_items" suffix -->
+  <!-- Items from *.model.json have a "_items" suffix. -->
   <!-- you can change the suffix in "__tank__/defaults.js" -->
+
+  <!-- For this special component, you will need to stop the local Vite server. -->
+  <!-- and re-run it!, $ npm run dev -->
+
   <section>
       <details>
           <summary class="pl-3 font-mono text-xl ">
+              <!-- Special filters provided by Nunjucks. -->
               {{ ${name}_items | dump | truncate(20) }}
           </summary>
 
@@ -905,7 +986,8 @@ function assertDataBlock({ call, name }: { call: number; name: string }) {
       </ol>
   </section>
 </article>
-`)
+`,
+  )
 
   const [file2, content2] = mock._create_block_file({ call: call + 1 }).args
   assertEquals(
@@ -933,7 +1015,11 @@ function assertHTMLBlock({ call, name }: { call: number; name: string }) {
   const [file, content] = mock._create_block_file({ call }).args
   assertEquals(mock._create_dir({ call }).args, "blocks")
   assertEquals(file, `blocks/${name}.html`)
-  assert(content.split("\n").includes(`<h1 class="text-3xl text-center uppercase">${name}</h1>`))
+  assert(
+    content
+      .split("\n")
+      .includes(`<h1 class="text-3xl text-center uppercase">${name}</h1>`),
+  )
 
   assertAppend({
     call,
