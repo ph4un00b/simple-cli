@@ -662,14 +662,14 @@ ${name} api block
     create_block_file(
       `blocks/${name}.html`,
       `<!-- You can leverage the Nunjucks templating stuff -->
-<!-- Or keep it simple with just plain old HTML. -->
 <!-- https://mozilla.github.io/nunjucks/templating.html#tags -->
+<!-- Or keep it simple with just plain old HTML. -->
 
 <!-- Your fancy HTML markup code here. -->
 <h1 class="text-3xl text-center uppercase">${name}</h1>
 
 <!-- Then include your component anywhere in any page with: -->
-<!-- ${block} -->
+<!-- "{" % include "blocks/${name}.html" % "}" -->
 
 <!-- One cool thing about Vite is once you enter $ npm run dev -->
 <!-- You can work and your changes will be reflected in the browser on the fly. -->
@@ -871,7 +871,14 @@ const COMPONENTS = {
   describe: "Generates a component. [ --html, --data, --api, --macro ]",
   builder: (cli: YargsInstance) => cli.options(html_opt).check(block_validator),
   handler: tank(actions).generate_handler,
-  example: ["tank c --html sidebar footer --data features --api events"],
+  example: [
+    brightGreen("tank c --html") +
+    " sidebar footer " +
+    brightGreen("--data") +
+    " features " +
+    brightGreen("--api") +
+    " events",
+  ],
 }
 
 const page_opt = {
@@ -916,7 +923,12 @@ const PAGE = {
       },
     ),
   handler: tank(actions).pages_handler,
-  example: ["tank p --single signup --multiple anime"],
+  example: [
+    brightGreen("tank p --single") +
+    " signup contact" +
+    brightGreen("--multiple") +
+    " anime",
+  ],
 }
 
 function _not_empty(block?: string[]) {
@@ -995,6 +1007,6 @@ if (import.meta.main) {
     // .epilogue("for more information, find our manual at http://example.com")
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.33")
+    .version("0.8.0.34")
     .parse()
 }

@@ -113,14 +113,14 @@ Deno.test("tank can create a html block", () => {
       call: 0,
       file: "blocks/sidebar.html",
       content: `<!-- You can leverage the Nunjucks templating stuff -->
-<!-- Or keep it simple with just plain old HTML. -->
 <!-- https://mozilla.github.io/nunjucks/templating.html#tags -->
+<!-- Or keep it simple with just plain old HTML. -->
 
 <!-- Your fancy HTML markup code here. -->
 <h1 class="text-3xl text-center uppercase">sidebar</h1>
 
 <!-- Then include your component anywhere in any page with: -->
-<!-- {% include "blocks/sidebar.html" %} -->
+<!-- "{" % include "blocks/sidebar.html" % "}" -->
 
 <!-- One cool thing about Vite is once you enter $ npm run dev -->
 <!-- You can work and your changes will be reflected in the browser on the fly. -->
