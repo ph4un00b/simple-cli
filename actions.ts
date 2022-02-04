@@ -30,6 +30,7 @@ export type Actions = {
   create_dir: (name: string) => void;
   insert_content: (content: string, filename: string) => void;
   stdOut: (text: string) => void;
+  block_exist: (name: string) => boolean;
 };
 
 export const actions: Actions = (function () {
@@ -116,7 +117,16 @@ export const actions: Actions = (function () {
     Deno.stdout.writeSync(new TextEncoder().encode(text))
   }
 
+  // todo: e2e macro
+  function block_exist(name: string) {
+    for (const entry of walkSync("blocks", { maxDepth: 1 })) {
+      if (_html(name, entry)) return true
+    }
+    return false
+  }
+
   return {
+    block_exist,
     create_directories,
     create_files,
     exec,
@@ -128,6 +138,11 @@ export const actions: Actions = (function () {
     stdOut,
   }
 })()
+
+function _html(name: string, entry: WalkEntry) {
+  return path.basename(`blocks/${name}.html`) === path.basename(entry.path) ||
+    path.basename(`blocks/${name}.macro.html`) === path.basename(entry.path)
+}
 
 // todo: e2e for extra line
 function _insert(filename: string, content: string) {

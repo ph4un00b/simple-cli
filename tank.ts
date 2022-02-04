@@ -45,6 +45,7 @@ export function tank(spec: Actions) {
     exec,
     insert_content,
     stdOut,
+    block_exist
   } = spec
 
   // eslint-disable-next-line max-lines-per-function
@@ -392,6 +393,11 @@ console.log("${page_name}!!!")`,
 
   // eslint-disable-next-line max-lines-per-function
   function create_macro_block(name: string, insert = true) {
+    if (block_exist(name)) {
+      stdOut(brightMagenta("Already Created Block: " + name))
+      return
+    }
+
     create_dir("blocks")
     create_block_file(
       `blocks/${name}.macro.html`,
@@ -432,6 +438,11 @@ console.log("${page_name}!!!")`,
 
   // eslint-disable-next-line max-lines-per-function
   function create_api_block(name: string) {
+    if (block_exist(name)) {
+      stdOut(brightMagenta("Already Created Block: " + name))
+      return
+    }
+
     const dev_content = `// https://axios-http.com/docs/instance
 const axios = require("axios").default;
 const baseURL = "https://animechan.vercel.app";
@@ -657,6 +668,11 @@ ${name} api block
 
   // eslint-disable-next-line max-lines-per-function
   function create_html_block(name: string) {
+    if (block_exist(name)) {
+      stdOut(brightMagenta("Already Created Block: " + name))
+      return
+    }
+
     create_dir("blocks")
     const block = "{% include \"blocks/" + name + ".html" + "\" %}"
     create_block_file(
@@ -683,6 +699,11 @@ ${name} api block
 
   // eslint-disable-next-line max-lines-per-function
   function create_data_block(name: string) {
+    if (block_exist(name)) {
+      stdOut(brightMagenta("Already Created Block: " + name))
+      return
+    }
+
     create_dir("blocks")
     create_block_file(
       `blocks/${name}.html`,
@@ -1007,6 +1028,6 @@ if (import.meta.main) {
     // .epilogue("for more information, find our manual at http://example.com")
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.34")
+    .version("0.8.0.35")
     .parse()
 }

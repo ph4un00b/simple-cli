@@ -1,5 +1,11 @@
 /* eslint-disable max-lines-per-function */
-import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts"
+import {
+  assert,
+  assertEquals,
+} from "https://deno.land/std@0.121.0/testing/asserts.ts"
+// import sinon from "https://esm.sh/sinon@13.0.1"
+// import sinon from "https://cdn.skypack.dev/sinon@11.1.2?dts"
+// import sinon from "https://cdn.skypack.dev/sinon";
 
 import { tank } from "./tank.ts"
 import { actionsMock as mock } from "./utils_dev.ts"
@@ -733,6 +739,41 @@ Deno.test("tank can handle a --multiple names with Windows slashes \\.", () => {
   }
 })
 
+Deno.test("tank do not create repeated blocks.", () => {
+  mock._block_exist({ returns: true })
+  try {
+    tank(mock).generate_handler({ html: ["header", "jamon"] })
+    assertEquals(mock._create_block_file().calls.length, 0)
+    assertEquals(
+      mock._stdOut({ call: 0 }).args,
+      "\x1b[95mAlready Created Block: header\x1b[39m",
+    )
+
+    tank(mock).generate_handler({ data: ["header", "jamon"] })
+    assertEquals(mock._create_block_file().calls.length, 0)
+    assertEquals(
+      mock._stdOut({ call: 0 }).args,
+      "\x1b[95mAlready Created Block: header\x1b[39m",
+    )
+
+    tank(mock).generate_handler({ api: ["header", "jamon"] })
+    assertEquals(mock._create_block_file().calls.length, 0)
+    assertEquals(
+      mock._stdOut({ call: 0 }).args,
+      "\x1b[95mAlready Created Block: header\x1b[39m",
+    )
+
+    tank(mock).generate_handler({ macro: ["header", "jamon"] })
+    assertEquals(mock._create_block_file().calls.length, 0)
+    assertEquals(
+      mock._stdOut({ call: 0 }).args,
+      "\x1b[95mAlready Created Block: header\x1b[39m",
+    )
+  } finally {
+    mock.restore()
+  }
+})
+
 Deno.test({
   name:
     "tank can build --multiple pages and move files in current directory on Windows.",
@@ -1008,7 +1049,7 @@ function assertDataBlock({ call, name }: { call: number; name: string }) {
 }
 
 function assertOutput(text: string) {
-  assertEquals(mock.logged({ call: 0 }).args, text)
+  assertEquals(mock._stdOut({ call: 0 }).args, text)
 }
 
 function assertHTMLBlock({ call, name }: { call: number; name: string }) {

@@ -5,15 +5,15 @@ type Call = { call: number };
 export interface ActionsMock {
   executed: (a: Call) => { args: string[]; calls: string[][] };
   directories: (a: Call) => { args: string[]; calls: string[][] };
-  _create_block_file: (a: Call) => { args: string[]; calls: string[][] };
+  _create_block_file: (a?: Call) => { args: string[]; calls: string[][] };
   _create_page_file: (a: Call) => { args: string[]; calls: string[][] };
   _insert_content: (a: Call) => { args: string[]; calls: string[][] };
   files: (a: Call) => { args: CreateFiles; calls: CreateFiles[] };
   get_removals: (a: Call) => { args: string; calls: string[] };
   _create_dir: (a: Call) => { args: string; calls: string[] };
-  logged: (a: Call) => { args: string; calls: string[] };
+  _stdOut: (a: Call) => { args: string; calls: string[] };
   restore: () => void;
-  vite_configs(bool: boolean): void;
+  _block_exist({ returns }: { returns: boolean }): void;
 }
 
 export const actionsMock: Actions & ActionsMock = (function () {
@@ -23,11 +23,12 @@ export const actionsMock: Actions & ActionsMock = (function () {
   let removals: string[] = []
   let block_files: string[][] = []
   let page_files: string[][] = []
-  let _is_file = true
+  let _file_exist = false
   let dir: string[] = []
   let blocks: string[][] = []
   let out: string[] = []
 
+  // eslint-disable-next-line max-lines-per-function
   const restore = () => {
     directories = []
     files = []
@@ -38,6 +39,7 @@ export const actionsMock: Actions & ActionsMock = (function () {
     dir = []
     blocks = []
     out = []
+    _file_exist = false
   }
 
   // eslint-disable-next-line max-lines-per-function
@@ -55,6 +57,7 @@ export const actionsMock: Actions & ActionsMock = (function () {
     create_dir: (args: string) => dir.push(args),
     insert_content: (...args: string[]) => blocks.push(args),
     stdOut: (args: string) => out.push(args),
+    block_exist: (name: string) => _file_exist,
   }
 
   return {
@@ -70,8 +73,8 @@ export const actionsMock: Actions & ActionsMock = (function () {
       args: directories[call],
       calls: directories,
     }),
-    _create_block_file: ({ call }: Call) => ({
-      args: block_files[call],
+    _create_block_file: (a?: Call) => ({
+      args: a?.call ? block_files[a.call] : block_files[0],
       calls: block_files,
     }),
     _create_page_file: ({ call }: Call) => ({
@@ -90,13 +93,12 @@ export const actionsMock: Actions & ActionsMock = (function () {
       args: blocks[call],
       calls: blocks,
     }),
-    logged: ({ call }: Call) => ({
+    _stdOut: ({ call }: Call) => ({
       args: out[call],
       calls: out,
     }),
-    exist: () => _is_file,
-    vite_configs(bool: boolean) {
-      _is_file = bool
+    _block_exist: ({ returns }: { returns: boolean }) => {
+      _file_exist = returns
     },
     restore,
     ...actionCalls,
