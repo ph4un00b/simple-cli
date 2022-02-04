@@ -113,7 +113,7 @@ Deno.test("tank can create a html block", () => {
   tank(mock).generate_handler({ html: ["sidebar"] })
 
   try {
-    assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
+    assertEquals(mock._create_dir().calls[0], "blocks")
 
     assertBlockFile({
       call: 0,
@@ -181,14 +181,14 @@ Deno.test("tank can create multiple data blocks at once", () => {
   })
 
   try {
-    assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
+    assertEquals(mock._create_dir().calls[0], "blocks")
     assertDataBlock({ call: 0, name: "list1" })
     assertAppend({
       call: 0,
       content: "{% include \"blocks/list1.html\" %}",
     })
 
-    assertEquals(mock._create_dir({ call: 1 }).args, "blocks")
+    assertEquals(mock._create_dir().calls[1], "blocks")
     assertDataBlock({ call: 2, name: "sections" })
     assertAppend({
       call: 1,
@@ -204,7 +204,7 @@ Deno.test("tank can create an api block", () => {
   const call = 0
   const name = "events"
   try {
-    assertEquals(mock._create_dir({ call }).args, "blocks")
+    assertEquals(mock._create_dir().calls[call], "blocks")
 
     assertApiBlock({ call, name })
 
@@ -222,7 +222,7 @@ Deno.test("tank can create a macro block", () => {
   const call = 0
   const name = "title"
   try {
-    assertEquals(mock._create_dir({ call }).args, "blocks")
+    assertEquals(mock._create_dir().calls[call], "blocks")
 
     assertBlockFile({
       call,
@@ -304,14 +304,14 @@ Deno.test("tank generator can slug fancy block names", () => {
 Deno.test("tank can create a single page", () => {
   tank(mock).pages_handler({ single: ["pricing"] })
   try {
-    assertEquals(mock._create_dir({ call: 0 }).args, "blocks")
+    assertEquals(mock._create_dir().calls[0], "blocks")
 
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
       "blocks/titles.macro.html",
     )
     assertEquals(mock._insert_content({ call: 0 }).calls.length, 0)
-    assertEquals(mock._create_dir({ call: 1 }).args, "pricing")
+    assertEquals(mock._create_dir().calls[1], "pricing")
 
     assertPageFile({
       call: 0,
@@ -633,9 +633,9 @@ export default () =>
 // add all your js content...
 console.log("money indice!")\`;`
 
-    assertEquals(mock._create_dir({ call: 0 }).args, "blocks/layouts")
-    assertEquals(mock._create_dir({ call: 1 }).args, "indice_makers")
-    assertEquals(mock._create_dir({ call: 2 }).args, "page_makers")
+    assertEquals(mock._create_dir().calls[0], "blocks/layouts")
+    assertEquals(mock._create_dir().calls[1], "indice_makers")
+    assertEquals(mock._create_dir().calls[2], "page_makers")
 
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
@@ -740,35 +740,45 @@ Deno.test("tank can handle a --multiple names with Windows slashes \\.", () => {
 })
 
 Deno.test("tank do not create repeated blocks.", () => {
-  mock._block_exist({ returns: true })
   try {
+    mock._block_exist({ returns: true })
     tank(mock).generate_handler({ html: ["header", "jamon"] })
+    assertEquals(mock._create_dir().calls[0], "blocks")
     assertEquals(mock._create_block_file().calls.length, 0)
     assertEquals(
       mock._stdOut({ call: 0 }).args,
       "\x1b[95mAlready Created Block: header\x1b[39m",
     )
 
+    mock.restore()
+    mock._block_exist({ returns: true })
     tank(mock).generate_handler({ data: ["header", "jamon"] })
+    assertEquals(mock._create_dir().calls[0], "blocks")
     assertEquals(mock._create_block_file().calls.length, 0)
     assertEquals(
       mock._stdOut({ call: 0 }).args,
       "\x1b[95mAlready Created Block: header\x1b[39m",
     )
 
+    mock.restore()
+    mock._block_exist({ returns: true })
     tank(mock).generate_handler({ api: ["header", "jamon"] })
+    assertEquals(mock._create_dir().calls[0], "blocks")
     assertEquals(mock._create_block_file().calls.length, 0)
     assertEquals(
       mock._stdOut({ call: 0 }).args,
       "\x1b[95mAlready Created Block: header\x1b[39m",
     )
 
+    mock.restore()
+    mock._block_exist({ returns: true })
     tank(mock).generate_handler({ macro: ["header", "jamon"] })
     assertEquals(mock._create_block_file().calls.length, 0)
     assertEquals(
       mock._stdOut({ call: 0 }).args,
       "\x1b[95mAlready Created Block: header\x1b[39m",
     )
+    assertEquals(mock._create_dir().calls[0], "blocks")
   } finally {
     mock.restore()
   }
@@ -1054,7 +1064,7 @@ function assertOutput(text: string) {
 
 function assertHTMLBlock({ call, name }: { call: number; name: string }) {
   const [file, content] = mock._create_block_file({ call }).args
-  assertEquals(mock._create_dir({ call }).args, "blocks")
+  assertEquals(mock._create_dir().calls[call], "blocks")
   assertEquals(file, `blocks/${name}.html`)
   assert(
     content

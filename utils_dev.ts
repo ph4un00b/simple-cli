@@ -10,7 +10,7 @@ export interface ActionsMock {
   _insert_content: (a: Call) => { args: string[]; calls: string[][] };
   files: (a: Call) => { args: CreateFiles; calls: CreateFiles[] };
   get_removals: (a: Call) => { args: string; calls: string[] };
-  _create_dir: (a: Call) => { args: string; calls: string[] };
+  _create_dir: () => { calls: string[] };
   _stdOut: (a: Call) => { args: string; calls: string[] };
   restore: () => void;
   _block_exist({ returns }: { returns: boolean }): void;
@@ -85,8 +85,7 @@ export const actionsMock: Actions & ActionsMock = (function () {
       args: removals[call],
       calls: removals,
     }),
-    _create_dir: ({ call }: Call) => ({
-      args: dir[call],
+    _create_dir: () => ({
       calls: dir,
     }),
     _insert_content: ({ call }: Call) => ({

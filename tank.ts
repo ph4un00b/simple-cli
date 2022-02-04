@@ -393,12 +393,13 @@ console.log("${page_name}!!!")`,
 
   // eslint-disable-next-line max-lines-per-function
   function create_macro_block(name: string, insert = true) {
+    create_dir("blocks")
+
     if (block_exist(name)) {
       stdOut(brightMagenta("Already Created Block: " + name))
       return
     }
 
-    create_dir("blocks")
     create_block_file(
       `blocks/${name}.macro.html`,
       `<!-- https://mozilla.github.io/nunjucks/templating.html#macro -->
@@ -438,6 +439,8 @@ console.log("${page_name}!!!")`,
 
   // eslint-disable-next-line max-lines-per-function
   function create_api_block(name: string) {
+    create_dir("blocks")
+
     if (block_exist(name)) {
       stdOut(brightMagenta("Already Created Block: " + name))
       return
@@ -543,7 +546,6 @@ ${name} api block
 </section>
 </section>`
 
-    create_dir("blocks")
     create_block_file(`blocks/${name}.html`, view_content)
     create_block_file(`blocks/${name}.model.dev.js`, dev_content)
     create_block_file(`blocks/${name}.model.prod.js`, prod_content)
@@ -668,12 +670,13 @@ ${name} api block
 
   // eslint-disable-next-line max-lines-per-function
   function create_html_block(name: string) {
+    create_dir("blocks")
+
     if (block_exist(name)) {
       stdOut(brightMagenta("Already Created Block: " + name))
       return
     }
 
-    create_dir("blocks")
     const block = "{% include \"blocks/" + name + ".html" + "\" %}"
     create_block_file(
       `blocks/${name}.html`,
@@ -699,12 +702,13 @@ ${name} api block
 
   // eslint-disable-next-line max-lines-per-function
   function create_data_block(name: string) {
+    create_dir("blocks")
+
     if (block_exist(name)) {
       stdOut(brightMagenta("Already Created Block: " + name))
       return
     }
 
-    create_dir("blocks")
     create_block_file(
       `blocks/${name}.html`,
       `<article class="flex flex-col items-center antialiased bg-rose-500 text-gray-50">
@@ -1028,6 +1032,6 @@ if (import.meta.main) {
     // .epilogue("for more information, find our manual at http://example.com")
     .strictCommands()
     .demandCommand(1)
-    .version("0.8.0.35")
+    .version("0.8.0.36")
     .parse()
 }
