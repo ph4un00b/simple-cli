@@ -1,11 +1,5 @@
 /* eslint-disable max-lines-per-function */
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.121.0/testing/asserts.ts"
-// import sinon from "https://esm.sh/sinon@13.0.1"
-// import sinon from "https://cdn.skypack.dev/sinon@11.1.2?dts"
-// import sinon from "https://cdn.skypack.dev/sinon";
+import { assert, assertEquals } from "./dev_deps.ts"
 
 import { tank } from "./tank.ts"
 import { actionsMock as mock } from "./utils_dev.ts"
@@ -13,9 +7,9 @@ Deno.test("tank can create a fancy blog", async () => {
   await tank(mock).new_handler({ name: "test" })
 
   try {
-    assertEquals(mock.files({ call: 0 }).args.name, "test")
-    assertEquals(mock.directories({ call: 0 }).args, ["images"])
-    assertEquals(mock.files({ call: 0 }).args.files, [
+    assertEquals(mock._create_files().calls[0].name, "test")
+    assertEquals(mock._create_directories().calls[0], ["images"])
+    assertEquals(mock._create_files().calls[0].files, [
       "index.html",
       "styles.css",
       ".gitignore",
@@ -32,9 +26,9 @@ Deno.test("tank can create an unfancy blog", async () => {
   })
 
   try {
-    assertEquals(mock.files({ call: 0 }).args.name, "test")
-    assertEquals(mock.directories({ call: 0 }).args, ["images"])
-    assertEquals(mock.files({ call: 0 }).args.files, [
+    assertEquals(mock._create_files().calls[0].name, "test")
+    assertEquals(mock._create_directories().calls[0], ["images"])
+    assertEquals(mock._create_files().calls[0].files, [
       "index.html",
       "styles.css",
       ".gitignore",
@@ -123,9 +117,9 @@ Deno.test("tank can create a html block", () => {
 <!-- Or keep it simple with just plain old HTML. -->
 
 <!-- Your fancy HTML markup code here. -->
-<h1 class="text-3xl text-center uppercase">sidebar</h1>
+<h1 class="text-3xl text-center uppercase">sidebar block</h1>
 
-<!-- Then include your component anywhere in any page with: -->
+<!-- Then include your component 'sidebar' anywhere in any page with: -->
 <!-- "{" % include "blocks/sidebar.html" % "}" -->
 
 <!-- One cool thing about Vite is once you enter $ npm run dev -->
@@ -255,9 +249,8 @@ Deno.test("tank can create a macro block", () => {
       content:
         `{% from "blocks/${name}.macro.html" import ${name}, ${name}_green %}
 
-    <div> {{ ${name}("reuse me!", "capitalize") }} </div>
-
-    <div> {{ ${name}_green("Macro blocks") }} 😁</div>
+<div> {{ ${name}("reuse me!", "capitalize") }} </div>
+<div> {{ ${name}_green("Macro blocks") }} 😁</div>
 `,
     })
   } finally {
@@ -343,7 +336,7 @@ Deno.test("tank can create a single page", () => {
       file: "pricing/main.js",
       content: `import "./styles.css"
 
-console.log("pricing!!!")`,
+console.log("single pricing page!!!");`,
     })
 
     assertPageFile({
@@ -487,7 +480,8 @@ export default async function* () {
     <script type="module" src="./../main.js"></script>
 </body>
 
-</html>`
+</html>
+`
 
     const paginator_file =
       `export const layout = "layouts/paginator.pages.html";
@@ -623,7 +617,8 @@ export default () =>
   \`import "./styles.css";
 
 // add all your js content...
-console.log("money page!")\`;`
+console.log("money page!");\`;
+`
 
     const js_indice_file = `export const url = "/money/page/main.js";
 
@@ -631,11 +626,10 @@ export default () =>
   \`import "./styles.css";
 
 // add all your js content...
-console.log("money indice!")\`;`
+console.log("money indice!");\`;
+`
 
-    assertEquals(mock._create_dir().calls[0], "blocks/layouts")
-    assertEquals(mock._create_dir().calls[1], "indice_makers")
-    assertEquals(mock._create_dir().calls[2], "page_makers")
+    assertEquals(mock._create_dir().calls, ["blocks/layouts", "makers", "blocks"])
 
     assertEquals(
       mock._create_block_file({ call: 0 }).args[0],
@@ -653,32 +647,32 @@ console.log("money indice!")\`;`
       content: paginator_layout,
     })
     assertPageFile({
-      file: "indice_makers/money.api.indice.js",
+      file: "makers/money/indice/api.indice.js",
       call: 2,
       content: paginator_file,
     })
     assertPageFile({
-      file: "indice_makers/money.css.indice.js",
+      file: "makers/money/indice/css.indice.js",
       call: 3,
       content: css_indice_file,
     })
     assertPageFile({
-      file: "indice_makers/money.js.indice.js",
+      file: "makers/money/indice/js.indice.js",
       call: 4,
       content: js_indice_file,
     })
     assertPageFile({
-      file: "page_makers/money.api.pages.js",
+      file: "makers/money/pages/api.pages.js",
       call: 5,
       content: pages_creator,
     })
     assertPageFile({
-      file: "page_makers/money.css.pages.js",
+      file: "makers/money/pages/css.pages.js",
       call: 6,
       content: css_pages_file,
     })
     assertPageFile({
-      file: "page_makers/money.js.pages.js",
+      file: "makers/money/pages/js.pages.js",
       call: 7,
       content: js_pages_file,
     })
@@ -817,27 +811,27 @@ function assertMultiplePageFileNames(name: string) {
   )
   assertEquals(
     mock._create_page_file({ call: 2 }).args[0],
-    `indice_makers/${name}.api.indice.js`,
+    `makers/${name}/indice/api.indice.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 3 }).args[0],
-    `indice_makers/${name}.css.indice.js`,
+    `makers/${name}/indice/css.indice.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 4 }).args[0],
-    `indice_makers/${name}.js.indice.js`,
+    `makers/${name}/indice/js.indice.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 5 }).args[0],
-    `page_makers/${name}.api.pages.js`,
+    `makers/${name}/pages/api.pages.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 6 }).args[0],
-    `page_makers/${name}.css.pages.js`,
+    `makers/${name}/pages/css.pages.js`,
   )
   assertEquals(
     mock._create_page_file({ call: 7 }).args[0],
-    `page_makers/${name}.js.pages.js`,
+    `makers/${name}/pages/js.pages.js`,
   )
 }
 
@@ -943,43 +937,43 @@ module.exports = async function () {
 `
 
   const view_content = `<section class="bg-gray-900 text-zinc-100">
-<span class="text-3xl text-transparent uppercase bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">
-${name} api block
-</span>
-<section class="flex flex-col flex-wrap sm:flex-row">
+    <span class="text-3xl text-transparent uppercase bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">
+        ${name} api block
+    </span>
+    <section class="flex flex-col flex-wrap sm:flex-row">
 
-    <!-- Items from *.model.{dev,prod}.js have a "_items" suffix. -->
-    <!-- you can change the suffix in "__tank__/defaults.js" -->
+        <!-- Items from *.model.{dev,prod}.js have a "_items" suffix. -->
+        <!-- you can change the suffix in "__tank__/defaults.js" -->
 
-    <!-- For this special component, you will need to stop the local Vite server. -->
-    <!-- and re-run it!, $ npm run dev -->
+        <!-- For this special component, you will need to stop the local Vite server. -->
+        <!-- and re-run it!, $ npm run dev -->
 
-    <!-- This component, created two model files, one for development process. -->
-    <!-- one for your production model. yo can see the production output by running:  -->
-    <!-- $ npm run prod, then $ npm run preview -->
+        <!-- This component, created two model files, one for development process. -->
+        <!-- one for your production model. yo can see the production output by running:  -->
+        <!-- $ npm run prod, then $ npm run preview -->
 
-    {% for item in ${name}_items %}
-    <article class="flex flex-col items-center justify-center w-full sm:w-1/4">
-        <header>
-            <picture class="flex justify-center p-3">
+        {% for item in ${name}_items %}
+        <article class="flex flex-col items-center justify-center w-full sm:w-1/4">
+            <header>
+                <picture class="flex justify-center p-3">
 
-                <!-- https://mozilla.github.io/nunjucks/templating.html#if-expression -->
-                <img class="w-40 h-40 p-0.5 rounded-3xl bg-clip-border bg-gradient-to-r from-pink-500 to-violet-500"
-                    src="//www.{{ 'placecage' if loop.index % 2 else 'fillmurray' }}.com/g/{{ loop.index }}00/{{ loop.index }}00"
-                    alt="random_image">
+                    <!-- https://mozilla.github.io/nunjucks/templating.html#if-expression -->
+                    <img class="w-40 h-40 p-0.5 rounded-3xl bg-clip-border bg-gradient-to-r from-pink-500 to-violet-500"
+                        src="//www.{{ 'placecage' if loop.index % 2 else 'fillmurray' }}.com/g/{{ loop.index }}00/{{ loop.index }}00"
+                        alt="random_image">
 
-            </picture>
-            <h3 class="pb-2 text-base text-center">
-                {{ item.character }}
-            </h3>
-        </header>
+                </picture>
+                <h3 class="pb-2 text-base text-center">
+                    {{ item.character }}
+                </h3>
+            </header>
 
-        <blockquote class="w-3/4 text-sm">
-            {{ item.quote | truncate(70) }}
-        </blockquote>
-    </article>
-    {% endfor %}
-</section>
+            <blockquote class="w-3/4 text-sm">
+                {{ item.quote | truncate(70) }}
+            </blockquote>
+        </article>
+        {% endfor %}
+    </section>
 </section>`
 
   const [file, content] = mock._create_block_file({ call }).args
@@ -1009,33 +1003,33 @@ function assertDataBlock({ call, name }: { call: number; name: string }) {
   assertEquals(
     content,
     `<article class="flex flex-col items-center antialiased bg-rose-500 text-gray-50">
-  <h1 class="text-4xl font-extralight">
-    ${name} block
-  </h1>
+    <h1 class="text-4xl font-extralight">
+        ${name} block
+    </h1>
 
-  <!-- https://mozilla.github.io/nunjucks/templating.html#dump -->
-  <!-- Items from *.model.json have a "_items" suffix. -->
-  <!-- you can change the suffix in "__tank__/defaults.js" -->
+    <!-- https://mozilla.github.io/nunjucks/templating.html#dump -->
+    <!-- Items from *.model.json have a "_items" suffix. -->
+    <!-- you can change the suffix in "__tank__/defaults.js" -->
 
-  <!-- For this special component, you will need to stop the local Vite server. -->
-  <!-- and re-run it!, $ npm run dev -->
+    <!-- For this special component, you will need to stop the local Vite server. -->
+    <!-- and re-run it!, $ npm run dev -->
 
-  <section>
-      <details>
-          <summary class="pl-3 font-mono text-xl ">
-              <!-- Special filters provided by Nunjucks. -->
-              {{ ${name}_items | dump | truncate(20) }}
-          </summary>
+    <section>
+        <details>
+            <summary class="pl-3 font-mono text-xl ">
+                <!-- Special filters provided by Nunjucks. -->
+                {{ ${name}_items | dump | truncate(20) }}
+            </summary>
 
-          <pre class="pt-6">{{ ${name}_items | dump(2) }}</pre>
+            <pre class="pt-6">{{ ${name}_items | dump(2) }}</pre>
         </details>
 
-      <ol>
-          {% for item in ${name}_items %}
-          <li class="list-decimal">{{ item.title }}</li>
-          {% endfor %}
-      </ol>
-  </section>
+        <ol>
+            {% for item in ${name}_items %}
+            <li class="list-decimal">{{ item.title }}</li>
+            {% endfor %}
+        </ol>
+    </section>
 </article>
 `,
   )
@@ -1069,7 +1063,9 @@ function assertHTMLBlock({ call, name }: { call: number; name: string }) {
   assert(
     content
       .split("\n")
-      .includes(`<h1 class="text-3xl text-center uppercase">${name}</h1>`),
+      .includes(
+        `<h1 class="text-3xl text-center uppercase">${name} block</h1>`,
+      ),
   )
 
   assertAppend({
@@ -1085,9 +1081,9 @@ function assertViteConfigs({
   call: number;
   folder?: string;
 }) {
-  assertEquals(mock.files({ call }).args.name, folder)
-  assertEquals(mock.directories({ call }).args, ["public", "__tank__"])
-  assertEquals(mock.files({ call }).args.files, [
+  assertEquals(mock._create_files().calls[call].name, folder)
+  assertEquals(mock._create_directories().calls[call], ["public", "__tank__"])
+  assertEquals(mock._create_files().calls[call].files, [
     "package.json",
     "vite.config.js",
     "tailwind.config.js",

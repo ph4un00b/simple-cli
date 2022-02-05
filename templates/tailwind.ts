@@ -1,9 +1,30 @@
+import api_dev_model from "./tailwind/blocks/api.dev.model.js";
+import api_html from "./tailwind/blocks/api.html.js";
+import api_prod_model from "./tailwind/blocks/api.prod.model.js";
+import data_html from "./tailwind/blocks/data.html.js";
+import data_model from "./tailwind/blocks/data.model.json.js";
+import html_html from "./tailwind/blocks/html.html.js";
+import macro_html from "./tailwind/blocks/macro.html.js";
+import patch_macro from "./tailwind/blocks/macro.patch.html.js";
+import indice_api from "./tailwind/multiple/indice.api.maker.js";
+import indice_css from "./tailwind/multiple/indice.css.maker.js";
+import indice_js from "./tailwind/multiple/indice.js.maker.js";
+import pages_api from "./tailwind/multiple/pages.api.maker.js";
+import pages_css from "./tailwind/multiple/pages.css.maker.js";
+import pages_js from "./tailwind/multiple/pages.js.maker.js";
+import layout_pages from "./tailwind/multiple/pages.layout.html.js";
+import layout_index from "./tailwind/multiple/paginator.layout.html.js";
+import single_index from "./tailwind/single/index.html.js";
+import single_js from "./tailwind/single/main.js";
+import single_css from "./tailwind/single/styles.css.js";
+import patch_vite_css from "./tailwind/vite/styles.patch.css.js";
+
 const TANK = {
   default_file: "__tank__/defaults.js",
   nunjucks_file: "__tank__/nunjucks.plugin.js",
   plugins_file: "__tank__/plugins.js",
   pages_file: "__tank__/pages.js",
-}
+};
 
 export type FancyFilesList = {
   "index.html": string;
@@ -53,7 +74,8 @@ export type FileContents = {
 };
 
 type TailwindTemplate = {
-  "no-bullshit": {
+  "tailwind": {
+    templates: { [key: string]: string };
     directories: Array<"images">;
     unfancy_directories: Array<"public" | "__tank__">;
     files: Array<"index.html" | "styles.css" | ".gitignore">;
@@ -71,8 +93,31 @@ type TailwindTemplate = {
     file_contents: FileContents;
   };
 };
+
 export const templates: TailwindTemplate = {
-  "no-bullshit": {
+  "tailwind": {
+    templates: {
+      "api.dev.model": api_dev_model,
+      "api.view": api_html,
+      "api.prod.model": api_prod_model,
+      "data.view": data_html,
+      "data.model": data_model,
+      "html.view": html_html,
+      "macro.view": macro_html,
+      "patch.macro": patch_macro,
+      "indice.api": indice_api,
+      "indice.js": indice_js,
+      "indice.css": indice_css,
+      "pages.api": pages_api,
+      "pages.js": pages_js,
+      "pages.css": pages_css,
+      "layout.pages": layout_pages,
+      "layout.index": layout_index,
+      "single.view": single_index,
+      "single.js": single_js,
+      "single.css": single_css,
+      "patch.vite.css": patch_vite_css
+    },
     directories: ["images"],
     unfancy_directories: ["public", "__tank__"],
     files: ["index.html", "styles.css", ".gitignore"],
@@ -476,4 +521,4 @@ serviceAccountKey.json
         `,
     },
   },
-}
+};

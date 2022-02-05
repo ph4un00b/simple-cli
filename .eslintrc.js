@@ -11,6 +11,7 @@ module.exports = {
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
   ],
+  "ignorePatterns": ["templates/**/*"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": "latest",
@@ -33,7 +34,7 @@ module.exports = {
     ],
     "max-params": [
       "error",
-      2,
+      3,
     ],
     "max-statements-per-line": [
       "error",
@@ -68,4 +69,4 @@ module.exports = {
       "error",
     ],
   },
-};
+}

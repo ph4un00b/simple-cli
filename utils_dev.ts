@@ -4,11 +4,11 @@ type Call = { call: number };
 
 export interface ActionsMock {
   executed: (a: Call) => { args: string[]; calls: string[][] };
-  directories: (a: Call) => { args: string[]; calls: string[][] };
+  _create_directories: () => { calls: string[][] };
   _create_block_file: (a?: Call) => { args: string[]; calls: string[][] };
   _create_page_file: (a: Call) => { args: string[]; calls: string[][] };
   _insert_content: (a: Call) => { args: string[]; calls: string[][] };
-  files: (a: Call) => { args: CreateFiles; calls: CreateFiles[] };
+  _create_files: () => { calls: CreateFiles[] };
   get_removals: (a: Call) => { args: string; calls: string[] };
   _create_dir: () => { calls: string[] };
   _stdOut: (a: Call) => { args: string; calls: string[] };
@@ -18,8 +18,8 @@ export interface ActionsMock {
 
 export const actionsMock: Actions & ActionsMock = (function () {
   let commands: string[][] = []
-  let directories: string[][] = []
-  let files: CreateFiles[] = []
+  let created_directories: string[][] = []
+  let created_files: CreateFiles[] = []
   let removals: string[] = []
   let block_files: string[][] = []
   let page_files: string[][] = []
@@ -30,8 +30,8 @@ export const actionsMock: Actions & ActionsMock = (function () {
 
   // eslint-disable-next-line max-lines-per-function
   const restore = () => {
-    directories = []
-    files = []
+    created_directories = []
+    created_files = []
     commands = []
     removals = []
     block_files = []
@@ -45,9 +45,9 @@ export const actionsMock: Actions & ActionsMock = (function () {
   // eslint-disable-next-line max-lines-per-function
   const actionCalls: Actions = {
     create_directories: (args) => {
-      directories.push(args)
+      created_directories.push(args)
     },
-    create_files: (args) => files.push(args),
+    create_files: (args) => created_files.push(args),
     exec: async (args) => {
       await commands.push(args)
     },
@@ -61,17 +61,13 @@ export const actionsMock: Actions & ActionsMock = (function () {
   }
 
   return {
-    files: ({ call }: Call) => ({
-      args: files[call],
-      calls: files,
-    }),
+    _create_files: () => ({ calls: created_files }),
     executed: ({ call }: Call) => ({
       args: commands[call],
       calls: commands,
     }),
-    directories: ({ call }: Call) => ({
-      args: directories[call],
-      calls: directories,
+    _create_directories: () => ({
+      calls: created_directories
     }),
     _create_block_file: (a?: Call) => ({
       args: a?.call ? block_files[a.call] : block_files[0],

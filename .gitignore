@@ -27,10 +27,6 @@ package-lock.json
 *.sw?
 *.exe
 
-index.html
-styles.css
-main.js
-blocks
 __tank__/
 public/
 images/

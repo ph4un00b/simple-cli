@@ -1,6 +1,5 @@
 /* eslint-disable max-lines-per-function */
-import { assert } from "https://deno.land/std@0.121.0/testing/asserts.ts"
-import { readAll } from "https://deno.land/std@0.121.0/streams/mod.ts"
+import { assert, readAll } from "../dev_deps.ts"
 
 const cli_flags = [
   "--allow-read",

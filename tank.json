@@ -1,0 +1,12 @@
+{
+  "template": "tailwind",
+  "manager": "npm",
+  "blocks": {
+    "dirname": "blocks",
+    "data_suffix": "items",
+    "api_suffix": "items"
+  },
+  "nunjucks": {
+    "dirname": "src/html"
+  }
+}
