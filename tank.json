@@ -1,6 +1,9 @@
 {
   "template": "tailwind",
   "manager": "npm",
+  "manager_dir": ["node_modules"],
+  "version_control": "git",
+  "version_control_dir": [".git"],
   "blocks": {
     "dirname": "blocks",
     "data_suffix": "items",

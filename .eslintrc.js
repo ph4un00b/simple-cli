@@ -1,4 +1,3 @@
-/* eslint-disable linebreak-style */
 module.exports = {
   "env": {
     "node": true,
@@ -21,6 +20,7 @@ module.exports = {
     "@typescript-eslint",
   ],
   "rules": {
+    "linebreak-style": ["error", "unix"],
     "no-return-await": "error",
     "require-await": "error",
     "no-async-promise-executor": "error",
@@ -52,10 +52,6 @@ module.exports = {
     "indent": [
       "error",
       2,
-    ],
-    "linebreak-style": [
-      "error",
-      "unix",
     ],
     "quotes": [
       "error",

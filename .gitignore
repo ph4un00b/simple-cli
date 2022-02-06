@@ -31,4 +31,4 @@ __tank__/
 public/
 images/
 *.config.js
-*.pages.*
+vite.config.js

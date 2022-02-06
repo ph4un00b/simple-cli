@@ -1,7 +1,6 @@
 {
-  "lcov.path": "lcov.info",
   "deno.enable": true,
-  "deno.lint": false,
+  "deno.lint": true,
   "deno.unstable": true,
   "workbench.colorCustomizations": {
     "activityBar.background": "#083334",

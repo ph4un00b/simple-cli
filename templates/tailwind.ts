@@ -18,6 +18,7 @@ import single_index from "./tailwind/single/index.html.js";
 import single_js from "./tailwind/single/main.js";
 import single_css from "./tailwind/single/styles.css.js";
 import patch_vite_css from "./tailwind/vite/styles.patch.css.js";
+import { vanilla_file_contents } from "./vanilla/file_contents.ts";
 
 const TANK = {
   default_file: "__tank__/defaults.js",
@@ -49,11 +50,9 @@ export type UnfancyFiles = Array<
   | "tailwind.config.js"
 >;
 
-export type options = "no-bullshit";
-
 export interface Arguments {
   bs?: boolean;
-  name?: string;
+  name: string;
   configs?: boolean;
 }
 
@@ -61,7 +60,7 @@ export interface HTTPArguments {
   port: number;
 }
 
-export type FileContents = {
+export type TailwindFileContents = {
   ".gitignore": string;
   "styles.css": string;
   "index.html": string;
@@ -70,16 +69,29 @@ export type FileContents = {
   "tailwind.config.js": string;
   "vite.config.js": string;
   "package.json": string;
-  [key: string]: string;
 };
 
-type TailwindTemplate = {
+export type VanillaFileContents = {
+  ".gitignore": string;
+  "styles.css": string;
+  "index.html": string;
+  "main.js": string;
+};
+
+export type TankPresets = {
+  "vanilla": {
+    templates?: { [key: string]: string };
+    directories: Array<"images">;
+    files: string[];
+    contents: VanillaFileContents;
+  };
   "tailwind": {
     templates: { [key: string]: string };
-    directories: Array<"images">;
-    unfancy_directories: Array<"public" | "__tank__">;
-    files: Array<"index.html" | "styles.css" | ".gitignore">;
-    unfancy_files: Array<
+    directories: string[];
+    files: Array<
+      | "index.html"
+      | "styles.css"
+      | ".gitignore"
       | "package.json"
       | "vite.config.js"
       | "tailwind.config.js"
@@ -90,11 +102,16 @@ type TailwindTemplate = {
       | "__tank__/plugins.js"
       | "__tank__/pages.js"
     >;
-    file_contents: FileContents;
+    contents: TailwindFileContents;
   };
 };
 
-export const templates: TailwindTemplate = {
+export const presets: TankPresets = {
+  "vanilla": {
+    directories: ["images"],
+    files: ["index.html", "main.js", "styles.css", ".gitignore"],
+    contents: vanilla_file_contents,
+  },
   "tailwind": {
     templates: {
       "api.dev.model": api_dev_model,
@@ -116,12 +133,13 @@ export const templates: TailwindTemplate = {
       "single.view": single_index,
       "single.js": single_js,
       "single.css": single_css,
-      "patch.vite.css": patch_vite_css
+      "patch.vite.css": patch_vite_css,
     },
-    directories: ["images"],
-    unfancy_directories: ["public", "__tank__"],
-    files: ["index.html", "styles.css", ".gitignore"],
-    unfancy_files: [
+    directories: ["images", "public", "__tank__"],
+    files: [
+      "index.html",
+      "styles.css",
+      ".gitignore",
       "package.json",
       "vite.config.js",
       "tailwind.config.js",
@@ -132,7 +150,7 @@ export const templates: TailwindTemplate = {
       "__tank__/plugins.js",
       "__tank__/pages.js",
     ],
-    file_contents: {
+    contents: {
       [TANK.pages_file]: `const { resolve, parse } = require("path");
 const glob = require("tiny-glob");
 const slug = require("slug");

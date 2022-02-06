@@ -23,14 +23,14 @@ function execute(options: any, folder?: string) {
     Deno.execPath(),
     "run",
     ...cli_flags,
-    folder ? "../../tank.ts" : "../tank.ts",
+    folder ? "../../cli.ts" : "../cli.ts",
     ...options,
   ]
 
   cli_command = Deno.run({
     cmd,
     cwd: folder ? `./e2e/${folder}` : "./e2e",
-    stdout: "piped",
+    stdout: "piped" /* comment this out in order to display the outputs. */,
   })
 
   return cli_command.status()
@@ -44,28 +44,50 @@ async function killing_cli() {
   // exited. As a workaround, wait for its stdout to close instead.
   // TODO: when `Process.kill()` is stable and works on Windows,
   // switch to calling `kill()` followed by `await fileServer.status()`.
+
+  if (!cli_command?.stdout) return
   await readAll(cli_command.stdout)
   cli_command.stdout?.close()
 }
 
-Deno.test("tank can create a fancy blog", async () => {
+Deno.test("tank can create a fancy blog", async function () {
   const test_dir = "test_data"
   const test_path = `e2e/${test_dir}/`
-  await execute(["new", "--name", "test_blog"], test_dir)
+  await execute(["new", "--name", "new_project"], test_dir)
 
   try {
-    assert(Deno.statSync(`${test_path}test_blog`).isDirectory)
-    assert(Deno.statSync(`${test_path}test_blog/images`).isDirectory)
-    assert(Deno.statSync(`${test_path}test_blog/index.html`).isFile)
-    assert(Deno.statSync(`${test_path}test_blog/styles.css`).isFile)
-    assert(Deno.statSync(`${test_path}test_blog/.gitignore`).isFile)
+    assert(true)
+    assert(
+      Deno.statSync(`${test_path}new_project`).isDirectory,
+      "no root directory"
+    )
+    assert(
+      Deno.statSync(`${test_path}new_project/images`).isDirectory,
+      "no images"
+    )
+    assert(
+      Deno.statSync(`${test_path}new_project/index.html`).isFile,
+      "no index.html"
+    )
+    assert(
+      Deno.statSync(`${test_path}new_project/styles.css`).isFile,
+      "no styles.css"
+    )
+    assert(
+      Deno.statSync(`${test_path}new_project/main.js`).isFile,
+      "no main.js"
+    )
+    assert(
+      Deno.statSync(`${test_path}new_project/.gitignore`).isFile,
+      "no .gitignore"
+    )
   } finally {
-    rm_path(`${test_path}test_blog`)
+    rm_path(`${test_path}new_project`)
     await killing_cli()
   }
 })
 
-Deno.test("tank can create a fancy blog with -n", async () => {
+Deno.test("tank can create a fancy blog with -n", async function () {
   const test_dir = "test_data"
   const test_path = `e2e/${test_dir}/`
   await execute(["new", "-n", "test_blog"], test_dir)
@@ -78,33 +100,22 @@ Deno.test("tank can create a fancy blog with -n", async () => {
   }
 })
 
-Deno.test("tank can create a fancy blog with --no-bs", async () => {
-  const test_dir = "test_data"
-  const test_path = `e2e/${test_dir}/`
-  await execute(["new", "-n", "test_blog", "--no-bs"], test_dir)
+// todo: new project --vite
+// Deno.test("tank can create an unfancy blog with vite configs", async () => {
+//   const test_dir = "test_data"
+//   const test_path = `e2e/${test_dir}/`
+//   await execute(["new", "-n", "test_blog", "-b"], test_dir)
 
-  try {
-    assertBaseConfig(`${test_path}test_blog/`)
-  } finally {
-    rm_path(`${test_path}test_blog`)
-    await killing_cli()
-  }
-})
+//   try {
+//     assertBaseConfig(`${test_path}test_blog/`)
+//     assertViteConfigs(`${test_path}test_blog/`)
+//   } finally {
+//     rm_path(`${test_path}test_blog`)
+//     await killing_cli()
+//   }
+// })
 
-Deno.test("tank can create an unfancy blog with vite configs", async () => {
-  const test_dir = "test_data"
-  const test_path = `e2e/${test_dir}/`
-  await execute(["new", "-n", "test_blog", "-b"], test_dir)
-
-  try {
-    assertBaseConfig(`${test_path}test_blog/`)
-    assertViteConfigs(`${test_path}test_blog/`)
-  } finally {
-    rm_path(`${test_path}test_blog`)
-    await killing_cli()
-  }
-})
-
+// todo: $ tank add vite
 Deno.test("tank can add vite configs inside a directory", async () => {
   const test_dir = "test_data"
   const test_path = `e2e/${test_dir}/`
@@ -156,7 +167,9 @@ Deno.test("tank --html appends create a block", async () => {
     )
   } finally {
     rm_path(`${test_path}blocks`)
-    Deno.writeTextFileSync(`${test_path}index.html`, `<!DOCTYPE html>
+    Deno.writeTextFileSync(
+      `${test_path}index.html`,
+      `<!DOCTYPE html>
 <html lang="en">
 <head>
 </head>
@@ -174,20 +187,30 @@ Deno.test("tank --html appends create a block", async () => {
             </ul>
         </nav>
     </article>
-</body></html>`)
+</body></html>`
+    )
     await killing_cli()
   }
 })
 
 async function assertStdErrContains(command: string[], include: string) {
-  const cmd = [Deno.execPath(), "run", ...cli_flags, "../tank.ts", ...command]
-  const p = Deno.run({ cmd, stdout: "piped", stderr: "piped", cwd: "./e2e" })
+  const cmd = [Deno.execPath(), "run", ...cli_flags, "../cli.ts", ...command]
+  const p = Deno.run({
+    cmd,
+    stdout: "piped",
+    stderr: "piped",
+    cwd: "./e2e" })
   const status = await p.status()
+  if (!p?.stdout || !p?.stderr) {
+    p.close()
+    assert(false, "you need to pipe the output!.")
+    return
+  }
   const stderr = new TextDecoder().decode(await readAll(p.stderr))
   p.close()
   p.stderr.close()
   p.stdout.close()
-  assert(!status.success)
+  assert(!status.success, "cli succeeded")
   assert(stderr.split("\n").includes(include))
 }
 
@@ -205,6 +228,10 @@ function rm_vite_configs({
 }) {
   const files = [
     "public",
+    "images",
+    "index.html",
+    ".gitignore",
+    "styles.css",
     "main.js",
     "postcss.config.js",
     "tailwind.config.js",
