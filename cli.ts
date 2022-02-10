@@ -1,10 +1,9 @@
-import { brightGreen, yargs } from "./deps.ts"
 import { HTTP } from "./command.http.ts"
 import { NEW } from "./command.new.ts"
 import { VITE } from "./command.vite.ts"
 import { PAGES } from "./command.p.ts"
 import { COMPONENTS } from "./command.c.ts"
-import { json2html, readLines } from "./deps.ts"
+import { json2html, readLines, slug, brightGreen, yargs } from "./deps.ts"
 import base_page from "./templates/vanilla/base_page.ts"
 import { create_dir, create_page_file } from "./actions.ts"
 
@@ -25,9 +24,11 @@ if (import.meta.main) {
 
         if (Array.isArray(js_object)) {
           for (const item of js_object) {
-            create_dir(`tank_multiple/${item["name"]}`)
+            slug.charmap["-"] = "_"
+            const name = slug(item["name"], "-")
+            create_dir(`tank_multiple/${name}`)
             create_page_file(
-              `tank_multiple/${item["name"]}/index.html`,
+              `tank_multiple/${name}/index.html`,
               base_page.replace(/__html__/g, json2html(item)),
             )
           }
@@ -65,6 +66,6 @@ if (import.meta.main) {
     // .epilogue("for more information, find our manual at http://example.com")
     .strictCommands()
     .demandCommand(1)
-    .version("0.9.0.0")
+    .version("0.9.0.1")
     .parse()
 }
