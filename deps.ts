@@ -25,3 +25,5 @@ export { default as slug } from "https://esm.sh/slug@5.2.0"
 export { default as yargs } from "https://deno.land/x/yargs/deno.ts"
 export { default as lume } from "https://deno.land/x/lume@v1.4.3/mod.ts"
 export { default as slugify_urls } from "https://deno.land/x/lume@v1.4.3/plugins/slugify_urls.ts"
+export { json2html } from "https://raw.githubusercontent.com/ph4un00b/json2html/dios/json2html.ts"
+export { readLines } from "https://deno.land/std@0.121.0/io/mod.ts";
